@@ -6,6 +6,7 @@ import Notes from './pages/Notes';
 import Explore from './pages/Explore';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
+import NoteDetail from './pages/NoteDetail';
 import './App.css';
 
 function App() {
@@ -40,6 +41,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/notes" element={<Notes />} />
+            <Route path="/notes/:id" element={<NoteDetail />} />
             <Route path="/explore" element={<Explore />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/settings" element={<Settings />} />

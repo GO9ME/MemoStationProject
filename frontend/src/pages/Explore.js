@@ -1,356 +1,406 @@
 import React, { useState } from 'react';
-import { 
-  Search, 
-  Compass, 
-  TrendingUp, 
-  Lightbulb, 
-  BookOpen, 
-  Target, 
-  Zap, 
-  Clock, 
-  Star, 
+import {
+  Settings,
+  TrendingUp,
+  Shield,
+  BarChart3,
+  RefreshCw,
+  Zap,
+  CheckCircle,
+  HelpCircle,
+  BookOpen,
+  Target,
+  RotateCcw,
+  Star,
+  Compass,
+  Lightbulb,
   ArrowRight,
-  Filter,
+  Search,
+  Eye,
+  Bookmark,
+  Share2,
   Brain,
-  Users,
-  Eye
+  Heart,
+  Clock,
 } from 'lucide-react';
 
+// 추천 전략 예시 데이터
+const strategyList = [
+  {
+    key: 'trend',
+    icon: <TrendingUp className="w-4 h-4 text-white" />, // 트렌드 추종형
+    grad: 'from-blue-500 to-cyan-500',
+    title: '트렌드 추종형',
+    desc: '최신 인기 콘텐츠 위주로 추천',
+    tags: ['최신 트렌드 우선', '인기 급상승 콘텐츠'],
+  },
+  {
+    key: 'expert',
+    icon: <Shield className="w-4 h-4 text-white" />, // 신중 검증형
+    grad: 'from-emerald-500 to-teal-500',
+    title: '신중 검증형',
+    desc: '검증된 콘텐츠(평가 높은, 오래된 등) 위주 추천',
+    tags: ['높은 완독률', '전문가 검증'],
+  },
+  {
+    key: 'balance',
+    icon: <BarChart3 className="w-4 h-4 text-white" />, // 균형형
+    grad: 'from-purple-500 to-pink-500',
+    title: '균형형',
+    desc: '트렌드/검증 콘텐츠 균형 있게 추천',
+    tags: ['다양성 보장', '균형잡힌 관점'],
+  },
+  {
+    key: 'review',
+    icon: <RefreshCw className="w-4 h-4 text-white" />, // 회고/복습형
+    grad: 'from-orange-500 to-red-500',
+    title: '회고/복습형',
+    desc: '이전 읽은 콘텐츠와 연관된 콘텐츠 재추천',
+    tags: ['연관성 중심', '복습 효과'],
+  },
+  {
+    key: 'practical',
+    icon: <Zap className="w-4 h-4 text-white" />, // 실용/즉시형
+    grad: 'from-green-500 to-emerald-500',
+    title: '실용/즉시형',
+    desc: '실천 가능한, 실행 중심 콘텐츠 우선 추천',
+    tags: ['즉시 적용 가능', '실무 중심'],
+  },
+];
+
+// 추천 성향 카드 예시 데이터
+const recommendCards = [
+  {
+    icon: <TrendingUp className="w-5 h-5 text-white" />,
+    grad: 'from-blue-500 to-cyan-500',
+    title: '요즘 많이 찾는 정보가 궁금할 때',
+    desc: '최신 트렌드와 화제의 콘텐츠를 빠르게 파악하고 싶어요',
+    tags: ['최신 기술 동향', '인기 있는 방법론', '화제의 인사이트'],
+  },
+  {
+    icon: <BookOpen className="w-5 h-5 text-white" />,
+    grad: 'from-emerald-500 to-teal-500',
+    title: '검증된 깊이 있는 정보를 찾고 싶을 때',
+    desc: '신뢰할 수 있고 전문적인 내용으로 깊이 있게 학습하고 싶어요',
+    tags: ['학술 연구 기반', '전문가 검증', '체계적 학습'],
+  },
+  {
+    icon: <Target className="w-5 h-5 text-white" />,
+    grad: 'from-purple-500 to-pink-500',
+    title: '다양한 콘텐츠를 균형 있게 보고 싶을 때',
+    desc: '여러 관점과 다양한 형태의 콘텐츠를 골고루 추천받고 싶어요',
+    tags: ['다각도 분석', '균형잡힌 시각', '종합적 이해'],
+  },
+  {
+    icon: <RotateCcw className="w-5 h-5 text-white" />,
+    grad: 'from-orange-500 to-red-500',
+    title: '기억을 되살리거나 다시 복습하고 싶을 때',
+    desc: '이전에 본 내용을 다시 보거나 관련된 내용으로 복습하고 싶어요',
+    tags: ['복습 콘텐츠', '연관 내용', '기억 강화'],
+  },
+  {
+    icon: <Lightbulb className="w-5 h-5 text-white" />,
+    grad: 'from-green-500 to-emerald-500',
+    title: '지금 바로 써먹을 정보를 찾고 있을 때',
+    desc: '실무에 즉시 적용할 수 있는 실용적인 정보가 필요해요',
+    tags: ['실무 팁', '즉시 적용', '단계별 가이드'],
+  },
+];
+
+// 추천 콘텐츠 예시 데이터
+const contentCards = [
+  {
+    img: 'https://images.pexels.com/photos/1181244/pexels-photo-1181244.jpeg?auto=compress&cs=tinysrgb&w=800',
+    category: 'Memory Science',
+    title: '효과적인 기억 강화 기법',
+    desc: '과학적으로 검증된 기억 강화 방법론과 일상에서 적용할 수 있는 실용적 기법들을 소개합니다.',
+    reason: '최근 학습 관련 노트가 증가했어요',
+    reasonDetail: '지난 주 작성하신 학습 효율성 노트와 기억력 개선 관련 검색 패턴을 분석한 결과입니다.',
+    stat: { view: '12,400회', bookmark: '890저장', share: '234공유', complete: '87% 완독' },
+    tag: '실용형 추천',
+    tagColor: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300',
+    time: '8분 읽기',
+    reasonType: '실용형 추천',
+    reasonTypeColor: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300',
+  },
+  {
+    img: 'https://images.pexels.com/photos/196644/pexels-photo-196644.jpeg?auto=compress&cs=tinysrgb&w=800',
+    category: 'Design Today',
+    title: '2024년 주목받는 디자인 트렌드',
+    desc: '올해 디자인 업계에서 가장 주목받고 있는 트렌드와 실무 적용 사례를 분석합니다.',
+    reason: '디자인 관련 콘텐츠 조회가 급증하고 있어요',
+    reasonDetail: '최근 1주일간 디자인 관련 콘텐츠 조회수가 340% 증가했으며, 비슷한 관심사를 가진 사용자들의 높은 만족도를 보였습니다.',
+    stat: { view: '45,600회', bookmark: '2340저장', share: '567공유', complete: '92% 완독' },
+    tag: '트렌드형 추천',
+    tagColor: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
+    time: '12분 읽기',
+    reasonType: '트렌드형 추천',
+    reasonTypeColor: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
+  },
+  {
+    img: 'https://images.pexels.com/photos/8386440/pexels-photo-8386440.jpeg?auto=compress&cs=tinysrgb&w=800',
+    category: 'Philosophy & Creativity',
+    title: '창의적 사고를 위한 철학적 접근',
+    desc: '동서양 철학에서 찾는 창의성의 본질과 현대적 적용 방법을 추천합니다.',
+    reason: '평소와 다른 관점의 콘텐츠를 추천해드려요',
+    reasonDetail: '기존 관심 영역과는 다르지만, 창의성과 사고 확장에 도움이 될 수 있는 새로운 시각의 콘텐츠입니다.',
+    stat: { view: '8,900회', bookmark: '456저장', share: '123공유', complete: '78% 완독' },
+    tag: '미지형 추천',
+    tagColor: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300',
+    time: '20분 읽기',
+    reasonType: '미지형 추천',
+    reasonTypeColor: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300',
+  },
+];
+
+const filterButtons = [
+  {
+    key: 'all',
+    icon: <Search className="w-4 h-4" />,
+    label: '전체 보기',
+    desc: '모든 추천 콘텐츠를 한 번에 확인하세요',
+    detail: ['개인화 알고리즘', '추천 성향', '최근 활동'],
+    active: true,
+    color: 'bg-blue-600 text-white',
+  },
+  {
+    key: 'trend',
+    icon: <TrendingUp className="w-4 h-4" />,
+    label: '트렌드 추천',
+    desc: '많은 사람들이 관심을 갖는 인기 콘텐츠',
+    detail: ['조회수', '저장 수', '공유 수', '최근 급상승'],
+    color: 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400',
+  },
+  {
+    key: 'trust',
+    icon: <Star className="w-4 h-4" />,
+    label: '신뢰 추천',
+    desc: '검증된 품질과 높은 만족도의 콘텐츠',
+    detail: ['완독률', '재방문율', '높은 반응률', '전문가 추천'],
+    color: 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400',
+  },
+  {
+    key: 'unknown',
+    icon: <Compass className="w-4 h-4" />,
+    label: '미지의 추천',
+    desc: '새로운 관점과 예상치 못한 발견을 위한 콘텐츠',
+    detail: ['미추천 영역', '새로운 관점', '의외의 연결', '확장된 시야'],
+    color: 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400',
+  },
+];
+
 const Explore = () => {
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedGoal, setSelectedGoal] = useState('knowledge-expansion');
-
-  // 현재 목적
-  const currentGoal = {
-    id: 'knowledge-expansion',
-    title: '📘 지식 확장',
-    description: '새로운 분야의 지식을 습득하고 기존 지식과 연결하기',
-    progress: 78,
-    status: '활발한 탐색',
-    lastUpdate: '2시간 전',
-    recommendations: 8,
-    relatedNotes: 3
-  };
-
-  // AI 추천 콘텐츠
-  const recommendations = [
-    {
-      id: 1,
-      title: '효과적인 기억 강화 기법',
-      category: 'Memory Science',
-      description: '과학적으로 검증된 기억 강화 방법론과 일상에서 적용할 수 있는 실용적 기법들을 소개합니다.',
-      readTime: 8,
-      accuracy: 94,
-      reason: '최근 학습 관련 노트가 증가했어요',
-      tags: ['학습', '기억법', '인지과학'],
-      difficulty: 'intermediate',
-      popularity: 4.8,
-      views: '2.1K'
-    },
-    {
-      id: 2,
-      title: '창의적 문제 해결 사고법',
-      category: 'Creative Thinking',
-      description: '막힌 상황에서 새로운 관점을 찾고 창의적 해결책을 도출하는 체계적 방법론입니다.',
-      readTime: 12,
-      accuracy: 89,
-      reason: '문제 해결 관련 고민이 자주 나타나고 있어요',
-      tags: ['창의성', '문제해결', '디자인씽킹'],
-      difficulty: 'advanced',
-      popularity: 4.6,
-      views: '1.8K'
-    },
-    {
-      id: 3,
-      title: '마음챙김을 통한 감정 정리법',
-      category: 'Mindful Living',
-      description: '복잡한 감정을 차분히 들여다보고 정리하는 마음챙김 기반 접근법을 다룹니다.',
-      readTime: 10,
-      accuracy: 87,
-      reason: '본질적 가치 정리 욕구가 보여요',
-      tags: ['마음챙김', '감정', '웰빙'],
-      difficulty: 'beginner',
-      popularity: 4.9,
-      views: '3.2K'
-    },
-    {
-      id: 4,
-      title: '시스템 사고와 복잡성 이해',
-      category: 'Systems Thinking',
-      description: '복잡한 시스템을 이해하고 분석하는 사고 프레임워크와 실제 적용 사례들을 다룹니다.',
-      readTime: 15,
-      accuracy: 91,
-      reason: '체계적 사고에 대한 관심이 높아지고 있어요',
-      tags: ['시스템사고', '복잡성', '분석'],
-      difficulty: 'advanced',
-      popularity: 4.4,
-      views: '1.2K'
-    },
-    {
-      id: 5,
-      title: '효과적인 습관 형성 과학',
-      category: 'Behavior Science',
-      description: '신경과학과 행동심리학을 바탕으로 한 지속 가능한 습관 형성 전략을 소개합니다.',
-      readTime: 9,
-      accuracy: 93,
-      reason: '개인 성장 관련 노트 패턴 발견',
-      tags: ['습관', '행동과학', '자기계발'],
-      difficulty: 'intermediate',
-      popularity: 4.7,
-      views: '2.5K'
-    },
-    {
-      id: 6,
-      title: '데이터 리터러시 기초',
-      category: 'Data Science',
-      description: '현대 사회에서 필수적인 데이터를 읽고 해석하는 능력을 기르는 방법을 다룹니다.',
-      readTime: 11,
-      accuracy: 85,
-      reason: '분석적 사고 능력 향상 니즈 감지',
-      tags: ['데이터', '분석', '리터러시'],
-      difficulty: 'beginner',
-      popularity: 4.5,
-      views: '1.9K'
-    }
-  ];
-
-  // 카테고리
-  const categories = [
-    { key: 'all', label: '전체', count: recommendations.length },
-    { key: 'trending', label: '인기', count: 4 },
-    { key: 'recent', label: '최신', count: 3 },
-    { key: 'personal', label: '맞춤', count: 5 }
-  ];
-
-  // 목적별 설정
-  const goals = [
-    { key: 'knowledge-expansion', label: '📘 지식 확장', progress: 78 },
-    { key: 'skill-development', label: '🔧 스킬 개발', progress: 65 },
-    { key: 'creative-thinking', label: '💡 창의적 사고', progress: 82 },
-    { key: 'problem-solving', label: '🎯 문제 해결', progress: 71 }
-  ];
-
-  const getDifficultyColor = (difficulty) => {
-    switch (difficulty) {
-      case 'beginner': return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300';
-      case 'intermediate': return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300';
-      case 'advanced': return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300';
-      default: return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
-    }
-  };
-
-  const getDifficultyLabel = (difficulty) => {
-    switch (difficulty) {
-      case 'beginner': return '초급';
-      case 'intermediate': return '중급';
-      case 'advanced': return '고급';
-      default: return '기타';
-    }
-  };
+  // 선택된 추천 전략 상태
+  const [selectedStrategy, setSelectedStrategy] = useState('balance');
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* 헤더 */}
-        <div className="flex items-center space-x-3 mb-8">
-          <Search className="w-8 h-8 text-blue-600" />
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">추천 탐색</h1>
-            <p className="text-gray-600 dark:text-gray-400">AI가 분석한 맞춤형 콘텐츠를 발견하세요</p>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="flex gap-8">
+        {/* 좌측 추천 전략 설정 패널 */}
+        <div className="w-80 flex-shrink-0 space-y-6">
+          <div className="sticky top-24">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 mb-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <Settings className="w-5 h-5 text-purple-500" />
+                <h3 className="font-bold text-slate-900 dark:text-white">추천 전략 설정</h3>
+              </div>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">선호하는 추천 방식을 선택하여 맞춤형 콘텐츠를 받아보세요.</p>
+              <div className="space-y-3">
+                {strategyList.map((item) => (
+                  <button
+                    key={item.key}
+                    onClick={() => setSelectedStrategy(item.key)}
+                    className={`w-full p-4 rounded-xl border-2 transition-all duration-200 text-left ${selectedStrategy === item.key ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'}`}
+                  >
+                    <div className="flex items-center space-x-3 mb-2">
+                      <div className={`w-8 h-8 bg-gradient-to-r ${item.grad} rounded-lg flex items-center justify-center`}>
+                        {item.icon}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-slate-900 dark:text-white text-sm">{item.title}</h4>
+                      </div>
+                      {selectedStrategy === item.key && (
+                        <CheckCircle className="w-5 h-5 text-purple-500" />
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">{item.desc}</p>
+                    <div className="flex flex-wrap gap-1">
+                      {item.tags.map((tag, i) => (
+                        <span key={i} className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 py-1 rounded-full">{tag}</span>
+                      ))}
+                    </div>
+                  </button>
+                ))}
+              </div>
+              {/* 적용된 전략 안내 */}
+              <div className="mt-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200/50 dark:border-purple-800/50">
+                <div className="flex items-center space-x-2 mb-2">
+                  <CheckCircle className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                  <span className="text-sm font-bold text-purple-900 dark:text-purple-300">적용된 전략</span>
+                </div>
+                <p className="text-sm text-purple-700 dark:text-purple-400 mb-2">균형형 방식으로 콘텐츠를 추천하고 있습니다.</p>
+                <p className="text-xs text-purple-600 dark:text-purple-400">트렌드와 검증 요소의 가중 평균</p>
+              </div>
+            </div>
           </div>
         </div>
-
-        {/* 현재 목적 카드 */}
-        <div className="card p-6 mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
-                <Target className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <div className="flex items-center space-x-2">
-                  <BookOpen className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                  <span className="text-sm font-medium text-blue-600 dark:text-blue-400">현재 목적</span>
-                </div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">{currentGoal.title}</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{currentGoal.description}</p>
-              </div>
+        {/* 우측 메인 영역 */}
+        <div className="flex-1 min-w-0">
+          {/* 상단 타이틀/설명 */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">콘텐츠 추천</h1>
+            <p className="text-slate-600 dark:text-slate-400">당신의 추천 성향에 맞는 정보를 깊이 있게 추천해드립니다</p>
+          </div>
+          {/* 현재 추천 전략 박스 */}
+          <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-2xl p-6 mb-8 border border-purple-200/50 dark:border-purple-800/50">
+            <div className="flex items-center space-x-3 mb-3">
+              <BarChart3 className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">현재 추천 전략: 균형형</h3>
             </div>
-            
-            <div className="text-right">
-              <div className="flex items-center space-x-2 mb-2">
-                <Zap className="w-4 h-4 text-green-600" />
-                <span className="text-sm font-medium text-green-600">{currentGoal.status}</span>
-              </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                {currentGoal.progress}%
-              </div>
-              <div className="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-2">
-                <div 
-                  className="bg-green-600 h-2 rounded-full" 
-                  style={{ width: `${currentGoal.progress}%` }}
-                ></div>
-              </div>
+            <p className="text-slate-700 dark:text-slate-300 mb-3">트렌드/검증 콘텐츠 균형 있게 추천</p>
+            <div className="flex flex-wrap gap-2">
+              <span className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-3 py-1 rounded-full text-sm font-medium">다양성 보장</span>
+              <span className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-3 py-1 rounded-full text-sm font-medium">균형잡힌 관점</span>
+              <span className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-3 py-1 rounded-full text-sm font-medium">종합적 큐레이션</span>
             </div>
           </div>
-          
-          <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
-            <span>{currentGoal.lastUpdate} 업데이트 • {currentGoal.recommendations}개 콘텐츠 추천 • {currentGoal.relatedNotes}개 관련 메모</span>
-            <div className="flex items-center space-x-4">
-              {goals.map((goal) => (
-                <button
-                  key={goal.key}
-                  onClick={() => setSelectedGoal(goal.key)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                    selectedGoal === goal.key
-                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                      : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400'
-                  }`}
-                >
-                  {goal.label} {goal.progress}%
+          {/* 추천 성향 카드 그리드 */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 mb-8 border border-slate-200/50 dark:border-slate-700/50">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-3">
+                <Target className="w-6 h-6 text-blue-500" />
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">나의 추천 성향</h2>
+              </div>
+              <div className="flex items-center space-x-3">
+                <button className="flex items-center space-x-2 px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-xl hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors text-sm font-medium">
+                  <HelpCircle className="w-4 h-4" />
+                  <span>3분 진단</span>
+                </button>
+                <span className="text-sm text-slate-500 dark:text-slate-400">다중 선택 가능</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {recommendCards.map((card, idx) => (
+                <button key={idx} className="p-6 rounded-2xl border-2 transition-all duration-200 text-left border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/30">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className={`w-10 h-10 bg-gradient-to-r ${card.grad} rounded-xl flex items-center justify-center`}>
+                      {card.icon}
+                    </div>
+                  </div>
+                  <h3 className="font-bold text-slate-900 dark:text-white mb-2 text-sm leading-tight">{card.title}</h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mb-3 leading-relaxed">{card.desc}</p>
+                  <div className="flex flex-wrap gap-1">
+                    {card.tags.map((tag, i) => (
+                      <span key={i} className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 py-1 rounded-full">{tag}</span>
+                    ))}
+                  </div>
                 </button>
               ))}
             </div>
           </div>
-        </div>
-
-        {/* 필터 및 카테고리 */}
-        <div className="flex flex-col md:flex-row gap-4 mb-8">
-          <div className="flex items-center space-x-2">
-            {categories.map((category) => (
-              <button
-                key={category.key}
-                onClick={() => setSelectedCategory(category.key)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2 ${
-                  selectedCategory === category.key
-                    ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
-                    : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
-                }`}
-              >
-                <span>{category.label}</span>
-                <span className="bg-gray-200 dark:bg-gray-600 text-xs px-2 py-0.5 rounded-full">
-                  {category.count}
-                </span>
-              </button>
+          {/* 추천 필터 버튼 */}
+          <div className="flex flex-wrap gap-2 mb-8">
+            {filterButtons.map((btn, idx) => (
+              <div key={btn.key} className="relative group">
+                <button className={`flex items-center space-x-2 px-6 py-3 rounded-2xl font-medium transition-all duration-200 ${btn.color} shadow-lg ${btn.active ? '' : 'hover:text-slate-900 dark:hover:text-white border border-slate-200/50 dark:border-slate-700/50'}`}>
+                  {btn.icon}
+                  <span>{btn.label}</span>
+                  <HelpCircle className="w-4 h-4 opacity-60" />
+                </button>
+                {/* 툴팁 */}
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
+                  <div className="bg-slate-900 dark:bg-slate-700 text-white text-sm rounded-xl p-4 shadow-xl max-w-xs">
+                    <div className="font-medium mb-2">{btn.desc}</div>
+                    <div className="text-xs text-slate-300 dark:text-slate-400">
+                      <div className="font-medium mb-1">추천 기준:</div>
+                      <ul className="space-y-1">
+                        {btn.detail.map((d, i) => (
+                          <li key={i}>• {d}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-slate-900 dark:border-t-slate-700"></div>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
-          
-          <div className="flex items-center space-x-2 ml-auto">
-            <Filter className="w-4 h-4 text-gray-500" />
-            <select className="bg-gray-100 dark:bg-gray-800 border-0 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white">
-              <option>추천 순위순</option>
-              <option>최신순</option>
-              <option>인기순</option>
-              <option>난이도순</option>
-            </select>
-          </div>
-        </div>
-
-        {/* AI 인사이트 */}
-        <div className="card p-4 mb-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-          <div className="flex items-center space-x-3">
-            <Brain className="w-5 h-5 text-blue-600" />
-            <div>
-              <h3 className="font-medium text-blue-900 dark:text-blue-100">AI 큐레이션 인사이트</h3>
-              <p className="text-sm text-blue-700 dark:text-blue-300">
-                최근 활동 패턴을 분석한 결과, 실용적 학습법과 창의적 사고에 대한 관심이 높아지고 있습니다. 
-                오늘 추천된 콘텐츠들은 이러한 관심사를 반영하여 선별되었습니다.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* 추천 콘텐츠 그리드 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {recommendations.map((item) => (
-            <div key={item.id} className="card overflow-hidden hover:shadow-md transition-shadow group">
-              {/* 콘텐츠 헤더 */}
-              <div className="relative">
-                <div className="h-32 bg-blue-500"></div>
-                <div className="absolute top-3 left-3 flex items-center space-x-2">
-                  <Clock className="w-4 h-4 text-white" />
-                  <span className="text-sm text-white">{item.readTime}분 읽기</span>
-                </div>
-                <div className="absolute top-3 right-3 flex items-center space-x-2">
-                  <span className="bg-white/90 text-xs font-bold px-2 py-1 rounded-full">
-                    {item.accuracy}%
-                  </span>
-                </div>
-                <div className="absolute bottom-3 left-3">
-                  <span className={`text-xs px-2 py-1 rounded-full ${getDifficultyColor(item.difficulty)}`}>
-                    {getDifficultyLabel(item.difficulty)}
-                  </span>
-                </div>
-              </div>
-              
-              <div className="p-4">
-                {/* 카테고리 */}
-                <div className="mb-2">
-                  <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded-full">
-                    {item.category}
-                  </span>
-                </div>
-                
-                {/* 제목 및 설명 */}
-                <h3 className="font-bold text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 transition-colors">
-                  {item.title}
-                </h3>
-                
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  {item.description}
-                </p>
-                
-                {/* 태그 */}
-                <div className="flex flex-wrap gap-1 mb-4">
-                  {item.tags.map((tag, index) => (
-                    <span
-                      key={index}
-                      className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-1 rounded"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-                
-                {/* 추천 이유 */}
-                <div className="flex items-start space-x-2 mb-4">
-                  <Lightbulb className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <div className="text-xs font-medium text-gray-900 dark:text-white">추천 이유</div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">{item.reason}</div>
+          {/* 추천 콘텐츠 카드 그리드 */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
+            {contentCards.map((item, idx) => (
+              <div key={idx} className="bg-white dark:bg-slate-800 rounded-3xl overflow-hidden border border-slate-200/50 dark:border-slate-700/50 hover:shadow-2xl hover:shadow-slate-900/10 dark:hover:shadow-slate-900/50 transition-all duration-300 hover:scale-[1.02] group">
+                {/* 이미지 및 상단 통계/태그 */}
+                <div className="relative h-48 overflow-hidden">
+                  <img src={item.img} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <div className="absolute top-4 left-4">
+                    <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm px-3 py-2 rounded-full text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center space-x-2">
+                      <Clock className="w-4 h-4" />
+                      <span>{item.time}</span>
+                    </div>
+                  </div>
+                  <div className="absolute top-4 right-4">
+                    <Heart className="w-6 h-6 text-white/80 hover:text-red-400 cursor-pointer transition-colors drop-shadow-lg" />
+                  </div>
+                  <div className="absolute bottom-4 left-4">
+                    <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${item.tagColor}`}>
+                      {item.tag === '실용형 추천' && <Lightbulb className="w-3 h-3" />}
+                      {item.tag === '트렌드형 추천' && <TrendingUp className="w-3 h-3" />}
+                      {item.tag === '미지형 추천' && <Compass className="w-3 h-3" />}
+                      <span>{item.tag}</span>
+                    </div>
                   </div>
                 </div>
-                
-                {/* 통계 */}
-                <div className="flex items-center justify-between mb-4 text-xs text-gray-500 dark:text-gray-400">
-                  <div className="flex items-center space-x-3">
-                    <div className="flex items-center space-x-1">
-                      <Star className="w-3 h-3 text-yellow-500 fill-current" />
-                      <span>{item.popularity}</span>
+                {/* 카드 본문 */}
+                <div className="p-6">
+                  <div className="mb-3">
+                    <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">{item.category}</span>
+                  </div>
+                  <h3 className="font-bold text-slate-900 dark:text-white text-xl mb-3 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{item.title}</h3>
+                  <p className="text-slate-600 dark:text-slate-400 mb-4 line-clamp-2 leading-relaxed">{item.desc}</p>
+                  {/* 추천 이유 */}
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-4 mb-4 border border-blue-100/50 dark:border-blue-800/30">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Brain className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wide">추천 이유</span>
                     </div>
-                    <div className="flex items-center space-x-1">
+                    <p className="text-sm text-slate-700 dark:text-slate-300 font-medium mb-2">{item.reason}</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-400">{item.reasonDetail}</p>
+                  </div>
+                  {/* 통계 */}
+                  <div className="grid grid-cols-2 gap-3 mb-4 text-xs">
+                    <div className="flex items-center space-x-2 text-slate-500 dark:text-slate-400">
                       <Eye className="w-3 h-3" />
-                      <span>{item.views}</span>
+                      <span>{item.stat.view}</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-slate-500 dark:text-slate-400">
+                      <Bookmark className="w-3 h-3" />
+                      <span>{item.stat.bookmark}</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-slate-500 dark:text-slate-400">
+                      <Share2 className="w-3 h-3" />
+                      <span>{item.stat.share}</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-slate-500 dark:text-slate-400">
+                      <CheckCircle className="w-3 h-3" />
+                      <span>{item.stat.complete}</span>
                     </div>
                   </div>
+                  {/* 읽기 버튼 */}
+                  <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center space-x-2 group shadow-lg hover:shadow-xl">
+                    <span>지금 읽어보기</span>
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </button>
                 </div>
-                
-                {/* 액션 버튼 */}
-                <button className="btn-primary w-full flex items-center justify-center">
-                  지금 읽기
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </button>
               </div>
-            </div>
-          ))}
-        </div>
-
-        {/* 더 많은 추천 */}
-        <div className="text-center mt-12">
-          <button className="btn-secondary">
-            더 많은 추천 보기
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </button>
+            ))}
+          </div>
+          {/* 이전 추천 콘텐츠 보기 버튼 */}
+          <div className="text-center">
+            <button className="inline-flex items-center space-x-2 px-6 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-2xl font-medium transition-colors border border-slate-200/50 dark:border-slate-700/50">
+              <RotateCcw className="w-5 h-5" />
+              <span>이전 추천 콘텐츠 보기</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

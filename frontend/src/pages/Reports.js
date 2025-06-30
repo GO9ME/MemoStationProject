@@ -1,418 +1,626 @@
 import React, { useState } from 'react';
-import { 
-  BarChart3, 
-  TrendingUp, 
-  Calendar, 
-  PieChart, 
-  Activity, 
-  Target, 
-  Trophy, 
-  Lightbulb,
+import {
   Brain,
-  Zap,
-  Clock,
-  Users,
+  Lightbulb,
   BookOpen,
-  ArrowUp,
-  ArrowDown,
-  Filter
+  PenLine,
+  ArrowRight,
+  AlertCircle,
+  Target,
+  Heart,
+  Eye,
+  Clock,
+  Play,
+  Puzzle,
+  BarChart3,
+  ChevronDown,
+  Link2,
+  Calendar,
+  Tag,
+  Crown,
+  Check,
+  Sparkles,
+  TrendingUp,
+  Compass,
+  Zap,
+  CheckCircle,
+  Award,
 } from 'lucide-react';
 
 const Reports = () => {
-  const [selectedPeriod, setSelectedPeriod] = useState('month');
-  const [selectedCategory, setSelectedCategory] = useState('overall');
-
-  // 시간대별 필터
-  const periods = [
-    { key: 'week', label: '1주일' },
-    { key: 'month', label: '1개월' },
-    { key: '3months', label: '3개월' },
-    { key: 'year', label: '1년' }
-  ];
-
-  // 카테고리 필터
-  const categories = [
-    { key: 'overall', label: '전체 분석' },
-    { key: 'learning', label: '학습 패턴' },
-    { key: 'creativity', label: '창의성' },
-    { key: 'productivity', label: '생산성' }
-  ];
-
-  // 주요 지표 데이터
-  const keyMetrics = [
-    {
-      title: '메모 생성량',
-      value: '47개',
-      change: '+23%',
-      trend: 'up',
-      description: '지난달 대비 증가',
-      icon: BookOpen,
-      color: 'blue'
-    },
-    {
-      title: '창의성 지수',
-      value: '78점',
-      change: '+12%',
-      trend: 'up',
-      description: '새로운 아이디어 연결성',
-      icon: Lightbulb,
-      color: 'yellow'
-    },
-    {
-      title: '학습 활동',
-      value: '156시간',
-      change: '+34%',
-      trend: 'up',
-      description: '집중 학습 시간',
-      icon: Brain,
-      color: 'green'
-    },
-    {
-      title: '목표 달성율',
-      value: '84%',
-      change: '-5%',
-      trend: 'down',
-      description: '설정한 목표 완료율',
-      icon: Target,
-      color: 'red'
-    }
-  ];
-
-  // 가치 흐름 분석
-  const valueFlowData = [
-    {
-      category: '지식 흡수',
-      currentWeek: 89,
-      lastWeek: 76,
-      items: [
-        { name: '새로운 개념 이해', score: 92 },
-        { name: '기존 지식과 연결', score: 85 },
-        { name: '실무 적용 가능성', score: 91 }
-      ]
-    },
-    {
-      category: '창의적 사고',
-      currentWeek: 76,
-      lastWeek: 82,
-      items: [
-        { name: '독창적 아이디어', score: 78 },
-        { name: '문제 해결 관점', score: 74 },
-        { name: '새로운 연결 발견', score: 76 }
-      ]
-    },
-    {
-      category: '실행력',
-      currentWeek: 71,
-      lastWeek: 68,
-      items: [
-        { name: '계획 수립', score: 75 },
-        { name: '단계별 실행', score: 68 },
-        { name: '결과 달성', score: 70 }
-      ]
-    },
-    {
-      category: '성찰과 개선',
-      currentWeek: 83,
-      lastWeek: 79,
-      items: [
-        { name: '자기 분석', score: 86 },
-        { name: '개선 방향 설정', score: 81 },
-        { name: '지속적 모니터링', score: 82 }
-      ]
-    }
-  ];
-
-  // 성장 트렌드 데이터
-  const growthTrends = [
-    { period: '1주차', value: 65, notes: 8 },
-    { period: '2주차', value: 72, notes: 12 },
-    { period: '3주차', value: 68, notes: 9 },
-    { period: '4주차', value: 84, notes: 18 }
-  ];
-
-  // 주제별 분석
-  const topicAnalysis = [
-    { topic: '학습 방법론', percentage: 32, notes: 15, growth: '+18%' },
-    { topic: '창의적 문제해결', percentage: 24, notes: 11, growth: '+24%' },
-    { topic: '개인 성장', percentage: 18, notes: 8, growth: '+12%' },
-    { topic: '마음챙김', percentage: 15, notes: 7, growth: '+8%' },
-    { topic: '시스템 사고', percentage: 11, notes: 6, growth: '+15%' }
-  ];
-
-  // AI 인사이트
-  const aiInsights = [
-    {
-      type: 'pattern',
-      title: '학습 패턴 발견',
-      content: '오후 2-4시 사이에 가장 창의적인 아이디어가 많이 생성됩니다. 이 시간대에 브레인스토밍을 집중하는 것을 추천합니다.',
-      confidence: 87,
-      actionable: true
-    },
-    {
-      type: 'growth',
-      title: '성장 가속화 포인트',
-      content: '실행력 부문에서 개선의 여지가 있습니다. 작은 단위로 계획을 나누고 즉시 실행하는 습관을 만들어보세요.',
-      confidence: 82,
-      actionable: true
-    },
-    {
-      type: 'connection',
-      title: '지식 연결성 강화',
-      content: '최근 메모들 사이의 연관성이 증가하고 있습니다. 서로 다른 주제를 연결하는 능력이 향상되고 있어요.',
-      confidence: 91,
-      actionable: false
-    }
-  ];
-
-  const getMetricColor = (color) => {
-    const colors = {
-      blue: 'text-blue-500 bg-blue-100 dark:bg-blue-900/30',
-      yellow: 'text-yellow-500 bg-yellow-100 dark:bg-yellow-900/30',
-      green: 'text-green-500 bg-green-100 dark:bg-green-900/30',
-      red: 'text-red-500 bg-red-100 dark:bg-red-900/30'
-    };
-    return colors[color] || colors.blue;
-  };
+  // 주간/월간 리포트 탭 상태
+  const [tab, setTab] = useState('week');
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* 헤더 */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-3">
-            <BarChart3 className="w-8 h-8 text-blue-600" />
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">분석 리포트</h1>
-              <p className="text-gray-600 dark:text-gray-400">성장 패턴과 학습 인사이트를 확인하세요</p>
-            </div>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* 상단 타이틀/설명 */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">AI 인사이트 리포트</h1>
+        <p className="text-slate-600 dark:text-slate-400">데이터로 확인하는 당신의 지식 여정과 성장 로드맵</p>
+      </div>
+      {/* 주간/월간 리포트 탭 */}
+      <div className="flex space-x-2 mb-8">
+        <button
+          className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 ${tab === 'week' ? 'bg-blue-600 text-white shadow-lg' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200/50 dark:border-slate-700/50'}`}
+          onClick={() => setTab('week')}
+        >
+          주간 리포트
+        </button>
+        <button
+          className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 ${tab === 'month' ? 'bg-blue-600 text-white shadow-lg' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200/50 dark:border-slate-700/50'}`}
+          onClick={() => setTab('month')}
+        >
+          월간 리포트
+        </button>
+      </div>
+      {/* AI 인사이트 섹션 */}
+      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-3xl p-8 mb-8 text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-black/10"></div>
+        <div className="relative">
+          <div className="flex items-center space-x-3 mb-6">
+            <Brain className="w-8 h-8" />
+            <h2 className="text-2xl font-bold">이번 주의 핵심 인사이트</h2>
           </div>
-          
-          {/* 필터 */}
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <Calendar className="w-4 h-4 text-gray-500" />
-              <select 
-                value={selectedPeriod}
-                onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="bg-gray-100 dark:bg-gray-800 border-0 rounded-lg px-3 py-2 text-sm"
-              >
-                {periods.map(period => (
-                  <option key={period.key} value={period.key}>{period.label}</option>
-                ))}
-              </select>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Filter className="w-4 h-4 text-gray-500" />
-              <select 
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="bg-gray-100 dark:bg-gray-800 border-0 rounded-lg px-3 py-2 text-sm"
-              >
-                {categories.map(category => (
-                  <option key={category.key} value={category.key}>{category.label}</option>
-                ))}
-              </select>
-            </div>
+          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-6 mb-6">
+            <div className="text-3xl font-bold mb-2">실천 중심 콘텐츠 소비율 +34%</div>
+            <div className="text-blue-100 text-lg">지난 주 대비 실행 가능한 콘텐츠 선택 비율이 크게 증가했습니다</div>
           </div>
-        </div>
-
-        {/* 주요 지표 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {keyMetrics.map((metric, index) => {
-            const IconComponent = metric.icon;
-            return (
-              <div key={index} className="card p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${getMetricColor(metric.color)}`}>
-                    <IconComponent className={`w-6 h-6 ${metric.color === 'blue' ? 'text-blue-500' : 
-                      metric.color === 'yellow' ? 'text-yellow-500' : 
-                      metric.color === 'green' ? 'text-green-500' : 'text-red-500'}`} />
-                  </div>
-                  <div className={`flex items-center space-x-1 text-sm font-medium ${
-                    metric.trend === 'up' ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {metric.trend === 'up' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
-                    <span>{metric.change}</span>
-                  </div>
-                </div>
-                
-                <div>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                    {metric.value}
-                  </div>
-                  <div className="text-sm font-medium text-gray-900 dark:text-white mb-1">
-                    {metric.title}
-                  </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                    {metric.description}
-                  </div>
-                </div>
+          <div className="mb-6">
+            <div className="flex items-center space-x-2 mb-3">
+              <Lightbulb className="w-6 h-6" />
+              <span className="text-xl font-semibold">AI 해석</span>
+            </div>
+            <p className="text-xl text-blue-100 leading-relaxed">
+              현재 사용자는 <span className="font-bold text-white">실행 의지가 상승 중</span>입니다. 이론적 학습에서 실무 적용 단계로 전환하려는 강한 동기가 감지됩니다.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <button className="bg-white/20 hover:bg-white/30 backdrop-blur-sm p-6 rounded-2xl transition-all duration-200 text-left group">
+              <div className="flex items-center space-x-3 mb-3">
+                <BookOpen className="w-6 h-6" />
+                <span className="font-semibold text-lg">실행 전략 콘텐츠 보러가기</span>
               </div>
-            );
-          })}
-        </div>
-
-        {/* 가치 흐름 분석 */}
-        <div className="card p-6 mb-8">
-          <div className="flex items-center space-x-2 mb-6">
-            <Activity className="w-5 h-5 text-blue-600" />
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">가치 흐름 분석</h2>
-            <span className="text-sm text-gray-500 dark:text-gray-400">주요 역량 변화 추적</span>
-          </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {valueFlowData.map((category, index) => (
-              <div key={index} className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-medium text-gray-900 dark:text-white">{category.category}</h3>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {category.currentWeek}
-                    </span>
-                    <div className={`text-sm font-medium ${
-                      category.currentWeek > category.lastWeek ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {category.currentWeek > category.lastWeek ? '+' : ''}
-                      {category.currentWeek - category.lastWeek}점
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-4">
-                  <div 
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-500" 
-                    style={{ width: `${category.currentWeek}%` }}
-                  ></div>
-                </div>
-                
-                <div className="space-y-2">
-                  {category.items.map((item, itemIndex) => (
-                    <div key={itemIndex} className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600 dark:text-gray-400">{item.name}</span>
-                      <span className="font-medium text-gray-900 dark:text-white">{item.score}점</span>
-                    </div>
-                  ))}
-                </div>
+              <p className="text-blue-200 text-sm mb-3">실무 적용 가능한 맞춤 콘텐츠를 추천해드려요</p>
+              <div className="flex items-center space-x-2 text-sm">
+                <span>바로 이동</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
-            ))}
+            </button>
+            <button className="bg-white/20 hover:bg-white/30 backdrop-blur-sm p-6 rounded-2xl transition-all duration-200 text-left group">
+              <div className="flex items-center space-x-3 mb-3">
+                <PenLine className="w-6 h-6" />
+                <span className="font-semibold text-lg">추천 노트 바로 생성하기</span>
+              </div>
+              <p className="text-blue-200 text-sm mb-3">현재 관심사 기반으로 실행 계획 노트를 만들어드려요</p>
+              <div className="flex items-center space-x-2 text-sm">
+                <span>노트 생성</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </button>
           </div>
         </div>
-
-        {/* 성장 트렌드 & 주제별 분석 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* 성장 트렌드 */}
-          <div className="card p-6">
-            <div className="flex items-center space-x-2 mb-6">
-              <TrendingUp className="w-5 h-5 text-green-600" />
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">성장 트렌드</h2>
-            </div>
-            
-            <div className="space-y-4">
-              {growthTrends.map((trend, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">{trend.period}</span>
+      </div>
+      {/* 놓치고 있는 중요한 노트 */}
+      <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 mb-8 border border-slate-200/50 dark:border-slate-700/50 shadow-xl">
+        <div className="flex items-center space-x-3 mb-6">
+          <AlertCircle className="w-6 h-6 text-amber-500" />
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">놓치고 있는 중요한 노트</h2>
+        </div>
+        <div className="space-y-6">
+          {/* 예시 노트 카드 1 */}
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800/50 rounded-2xl p-6">
+            <div className="flex items-start space-x-4">
+              <div className="text-3xl">🤔</div>
+              <div className="flex-1">
+                <h3 className="font-bold text-slate-900 dark:text-white text-lg mb-2">창의성에 대한 고민</h3>
+                <p className="text-slate-600 dark:text-slate-400 mb-4 line-clamp-2">창의적인 아이디어가 나오지 않을 때의 답답함과 그것을 극복하는 방법에 대해...</p>
+                <div className="bg-white/70 dark:bg-slate-700/30 rounded-xl p-4 mb-4">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Target className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    <span className="text-sm font-bold text-amber-900 dark:text-amber-300">중요 판단 기준</span>
                   </div>
+                  <p className="text-sm text-slate-700 dark:text-slate-300">이 노트 이후 유사 주제 3건 발생</p>
+                </div>
+                <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
-                    <div className="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div 
-                        className="bg-green-500 h-2 rounded-full" 
-                        style={{ width: `${trend.value}%` }}
-                      ></div>
+                    <div className="flex items-center space-x-1 text-sm text-slate-500 dark:text-slate-400">
+                      <Heart className="w-4 h-4 text-red-500" />
+                      <span>중요도 85%</span>
                     </div>
-                    <span className="text-sm font-medium text-gray-900 dark:text-white w-8">
-                      {trend.value}
-                    </span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 w-16">
-                      {trend.notes}개 메모
-                    </span>
+                    <div className="flex items-center space-x-1 text-sm text-slate-500 dark:text-slate-400">
+                      <Eye className="w-4 h-4" />
+                      <span>3개 연관 노트</span>
+                    </div>
+                    <div className="flex items-center space-x-1 text-sm text-slate-500 dark:text-slate-400">
+                      <Clock className="w-4 h-4" />
+                      <span>12일 전</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <button className="bg-amber-100 dark:bg-amber-900/30 hover:bg-amber-200 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-300 px-4 py-2 rounded-xl font-medium transition-colors flex items-center space-x-2">
+                      <Eye className="w-4 h-4" />
+                      <span>다시 보기</span>
+                    </button>
+                    <button className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl font-medium transition-colors flex items-center space-x-2">
+                      <Play className="w-4 h-4" />
+                      <span>실천 계획 작성하기</span>
+                    </button>
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
           </div>
-          
-          {/* 주제별 분석 */}
-          <div className="card p-6">
-            <div className="flex items-center space-x-2 mb-6">
-              <PieChart className="w-5 h-5 text-purple-600" />
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">주제별 분석</h2>
+          {/* 예시 노트 카드 2 */}
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800/50 rounded-2xl p-6">
+            <div className="flex items-start space-x-4">
+              <div className="text-3xl">😰</div>
+              <div className="flex-1">
+                <h3 className="font-bold text-slate-900 dark:text-white text-lg mb-2">새로운 도전에 대한 두려움</h3>
+                <p className="text-slate-600 dark:text-slate-400 mb-4 line-clamp-2">안전한 길과 도전적인 길 사이에서의 고민, 실패에 대한 두려움을 어떻게...</p>
+                <div className="bg-white/70 dark:bg-slate-700/30 rounded-xl p-4 mb-4">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Target className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    <span className="text-sm font-bold text-amber-900 dark:text-amber-300">중요 판단 기준</span>
+                  </div>
+                  <p className="text-sm text-slate-700 dark:text-slate-300">실행 계획 미작성 상태</p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-1 text-sm text-slate-500 dark:text-slate-400">
+                      <Heart className="w-4 h-4 text-red-500" />
+                      <span>중요도 92%</span>
+                    </div>
+                    <div className="flex items-center space-x-1 text-sm text-slate-500 dark:text-slate-400">
+                      <Eye className="w-4 h-4" />
+                      <span>5개 연관 노트</span>
+                    </div>
+                    <div className="flex items-center space-x-1 text-sm text-slate-500 dark:text-slate-400">
+                      <Clock className="w-4 h-4" />
+                      <span>8일 전</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <button className="bg-amber-100 dark:bg-amber-900/30 hover:bg-amber-200 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-300 px-4 py-2 rounded-xl font-medium transition-colors flex items-center space-x-2">
+                      <Eye className="w-4 h-4" />
+                      <span>다시 보기</span>
+                    </button>
+                    <button className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl font-medium transition-colors flex items-center space-x-2">
+                      <Play className="w-4 h-4" />
+                      <span>이 노트로 루틴 생성</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
-            
-            <div className="space-y-4">
-              {topicAnalysis.map((topic, index) => (
-                <div key={index} className="flex items-center justify-between">
+          </div>
+        </div>
+      </div>
+      {/* 성장 단계 흐름 */}
+      <div id="value-flow-analysis" className="bg-white rounded-2xl shadow-xl p-8 mb-8">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center space-x-2">
+            <TrendingUp className="w-6 h-6 text-green-500" />
+            <h2 className="text-2xl font-bold text-slate-900">성장 단계 흐름</h2>
+          </div>
+          <div className="text-sm text-slate-400 font-medium">지식 → 문제해결 → 실행 순서</div>
+        </div>
+        <div className="mt-2 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* 지식 추천 */}
+            <div className="flex flex-col items-center bg-white rounded-2xl p-6 shadow-sm h-full">
+              <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center mb-4 shadow-lg">
+                <Compass className="w-10 h-10 text-white" />
+              </div>
+              <div className="text-lg font-bold text-slate-900 mb-1">지식 추천</div>
+              <div className="text-sm text-slate-500 mb-2">새로운 정보와 아이디어 수집</div>
+              <div className="w-full flex flex-col items-center mb-1">
+                <div className="w-full flex items-center justify-between mb-1">
+                  <span className="text-xs text-blue-600 font-bold">85%</span>
+                  <span className="text-xs text-slate-400">&nbsp;</span>
+                </div>
+                <div className="w-full h-2 bg-slate-200 rounded-full">
+                  <div className="h-2 bg-blue-500 rounded-full" style={{ width: '85%' }}></div>
+                </div>
+              </div>
+              <div className="text-xs text-slate-400 mt-2">활발한 추천 활동</div>
+            </div>
+            {/* 문제 해결 */}
+            <div className="flex flex-col items-center bg-white rounded-2xl p-6 shadow-sm h-full">
+              <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mb-4 shadow-lg">
+                <Brain className="w-10 h-10 text-white" />
+              </div>
+              <div className="text-lg font-bold text-slate-900 mb-1">문제 해결</div>
+              <div className="text-sm text-slate-500 mb-2">구체적 문제 분석과 해결책 모색</div>
+              <div className="w-full flex flex-col items-center mb-1">
+                <div className="w-full flex items-center justify-between mb-1">
+                  <span className="text-xs text-purple-500 font-bold">65%</span>
+                  <span className="text-xs text-slate-400">&nbsp;</span>
+                </div>
+                <div className="w-full h-2 bg-slate-200 rounded-full">
+                  <div className="h-2 bg-purple-500 rounded-full" style={{ width: '65%' }}></div>
+                </div>
+              </div>
+              <div className="text-xs text-slate-400 mt-2">문제 해결 중심</div>
+            </div>
+            {/* 실행 강화 */}
+            <div className="flex flex-col items-center bg-white rounded-2xl p-6 shadow-sm h-full">
+              <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mb-4 shadow-lg">
+                <Zap className="w-10 h-10 text-white" />
+              </div>
+              <div className="text-lg font-bold text-slate-900 mb-1">실행 강화</div>
+              <div className="text-sm text-slate-500 mb-2">계획 수립과 실제 적용</div>
+              <div className="w-full flex flex-col items-center mb-1">
+                <div className="w-full flex items-center justify-between mb-1">
+                  <span className="text-xs text-green-500 font-bold">40%</span>
+                  <span className="text-xs text-slate-400">&nbsp;</span>
+                </div>
+                <div className="w-full h-2 bg-slate-200 rounded-full">
+                  <div className="h-2 bg-green-500 rounded-full" style={{ width: '40%' }}></div>
+                </div>
+              </div>
+              <div className="text-xs text-slate-400 mt-2">실행 준비 단계</div>
+            </div>
+          </div>
+        </div>
+        {/* 하단 4개 카드 */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-2">
+          {/* 지식 확장 */}
+          <div className="relative bg-slate-50 rounded-2xl p-6 flex flex-col items-start shadow group h-full">
+            <span className="absolute right-4 top-4 px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">+15%</span>
+            <div className="text-sm text-slate-500 mb-1">지식 확장</div>
+            <div className="text-2xl font-bold text-slate-900 mb-1">75%</div>
+            <div className="text-sm text-slate-400 mb-2">추천 단계</div>
+            <div className="w-full h-2 bg-slate-200 rounded-full">
+              <div className="h-2 bg-blue-500 rounded-full" style={{ width: '75%' }}></div>
+            </div>
+          </div>
+          {/* 문제 해결 */}
+          <div className="relative bg-slate-50 rounded-2xl p-6 flex flex-col items-start shadow group h-full">
+            <span className="absolute right-4 top-4 px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">+25%</span>
+            <div className="text-sm text-slate-500 mb-1">문제 해결</div>
+            <div className="text-2xl font-bold text-slate-900 mb-1">65%</div>
+            <div className="text-sm text-slate-400 mb-2">분석 단계</div>
+            <div className="w-full h-2 bg-slate-200 rounded-full">
+              <div className="h-2 bg-purple-500 rounded-full" style={{ width: '65%' }}></div>
+            </div>
+          </div>
+          {/* 실행 강화 */}
+          <div className="relative bg-slate-50 rounded-2xl p-6 flex flex-col items-start shadow group h-full">
+            <span className="absolute right-4 top-4 px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">+35%</span>
+            <div className="text-sm text-slate-500 mb-1">실행 강화</div>
+            <div className="text-2xl font-bold text-slate-900 mb-1">40%</div>
+            <div className="text-sm text-slate-400 mb-2">적용 단계</div>
+            <div className="w-full h-2 bg-slate-200 rounded-full">
+              <div className="h-2 bg-green-500 rounded-full" style={{ width: '40%' }}></div>
+            </div>
+          </div>
+          {/* 창작 영감 */}
+          <div className="relative bg-slate-50 rounded-2xl p-6 flex flex-col items-start shadow group h-full">
+            <span className="absolute right-4 top-4 px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">+10%</span>
+            <div className="text-sm text-slate-500 mb-1">창작 영감</div>
+            <div className="text-2xl font-bold text-slate-900 mb-1">60%</div>
+            <div className="text-sm text-slate-400 mb-2">확장 단계</div>
+            <div className="w-full h-2 bg-slate-200 rounded-full">
+              <div className="h-2 bg-orange-500 rounded-full" style={{ width: '60%' }}></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* 추천 성과 분석 */}
+      <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 mb-8 border border-slate-200/50 dark:border-slate-700/50 shadow-xl">
+        <div className="flex items-center space-x-3 mb-6">
+          <Target className="w-6 h-6 text-green-500" />
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">추천 성과 분석</h2>
+        </div>
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl p-6 mb-6 border border-green-200/50 dark:border-green-800/50">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">사용자 행동 전환 흐름</h3>
+          <div className="flex items-center justify-between">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-slate-900 dark:text-white">24건</div>
+              <div className="text-sm text-slate-600 dark:text-slate-400">AI 추천 콘텐츠</div>
+            </div>
+            <ArrowRight className="w-6 h-6 text-slate-400" />
+            <div className="text-center">
+              <div className="text-2xl font-bold text-slate-900 dark:text-white">18건</div>
+              <div className="text-sm text-slate-600 dark:text-slate-400">클릭</div>
+            </div>
+            <ArrowRight className="w-6 h-6 text-slate-400" />
+            <div className="text-center">
+              <div className="text-2xl font-bold text-slate-900 dark:text-white">6건</div>
+              <div className="text-sm text-slate-600 dark:text-slate-400">노트화</div>
+            </div>
+            <ArrowRight className="w-6 h-6 text-slate-400" />
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">33%</div>
+              <div className="text-sm text-slate-600 dark:text-slate-400">실행율</div>
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="text-center p-6 bg-slate-50 dark:bg-slate-700/30 rounded-2xl">
+            <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Eye className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div className="text-2xl font-bold text-slate-900 dark:text-white mb-1">75%</div>
+            <div className="text-sm text-slate-600 dark:text-slate-400">클릭률</div>
+            <div className="text-xs text-green-600 dark:text-green-400 mt-1">+12% 상승</div>
+          </div>
+          <div className="text-center p-6 bg-slate-50 dark:bg-slate-700/30 rounded-2xl">
+            <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <PenLine className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div className="text-2xl font-bold text-slate-900 dark:text-white mb-1">33%</div>
+            <div className="text-sm text-slate-600 dark:text-slate-400">노트 전환율</div>
+            <div className="text-xs text-green-600 dark:text-green-400 mt-1">+8% 상승</div>
+          </div>
+          <div className="text-center p-6 bg-slate-50 dark:bg-slate-700/30 rounded-2xl">
+            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+            </div>
+            <div className="text-2xl font-bold text-slate-900 dark:text-white mb-1">87%</div>
+            <div className="text-sm text-slate-600 dark:text-slate-400">AI 추천 만족도</div>
+            <div className="text-xs text-green-600 dark:text-green-400 mt-1">+5% 상승</div>
+          </div>
+        </div>
+      </div>
+      {/* 이 주의 실행 가이드 */}
+      <div className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 rounded-3xl p-8 mb-8 text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-black/10"></div>
+        <div className="relative">
+          <div className="flex items-center space-x-3 mb-6">
+            <Award className="w-8 h-8" />
+            <h2 className="text-2xl font-bold">이 주의 실행 가이드</h2>
+          </div>
+          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-6 mb-6">
+            <p className="text-xl font-semibold mb-4">📝 이번 주 당신의 성장 방향은 <span className="font-bold text-green-100">[실행 강화]</span>입니다.</p>
+            <p className="text-green-100">지금까지 수집한 지식을 실제로 적용해볼 최적의 시기입니다.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button className="bg-white/20 hover:bg-white/30 backdrop-blur-sm p-6 rounded-2xl transition-all duration-200 text-left group">
+              <div className="flex items-center space-x-3 mb-3">
+                <Brain className="w-6 h-6" />
+                <span className="font-semibold">AI 루틴 노트 생성하기</span>
+              </div>
+              <p className="text-green-200 text-sm mb-3">현재 관심사를 바탕으로 실행 가능한 루틴을 만들어드려요</p>
+              <div className="flex items-center space-x-2 text-sm">
+                <span>바로 생성</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </button>
+            <button className="bg-white/20 hover:bg-white/30 backdrop-blur-sm p-6 rounded-2xl transition-all duration-200 text-left group">
+              <div className="flex items-center space-x-3 mb-3">
+                <BookOpen className="w-6 h-6" />
+                <span className="font-semibold">실천 전략 콘텐츠 3편 보기</span>
+              </div>
+              <p className="text-green-200 text-sm mb-3">실무 적용에 특화된 맞춤 콘텐츠를 추천해드려요</p>
+              <div className="flex items-center space-x-2 text-sm">
+                <span>콘텐츠 보기</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </button>
+            <button className="bg-white/20 hover:bg-white/30 backdrop-blur-sm p-6 rounded-2xl transition-all duration-200 text-left group">
+              <div className="flex items-center space-x-3 mb-3">
+                <BarChart3 className="w-6 h-6" />
+                <span className="font-semibold">실천 점검 대시보드 열기</span>
+              </div>
+              <p className="text-green-200 text-sm mb-3">실행 계획의 진행 상황을 체계적으로 관리해보세요</p>
+              <div className="flex items-center space-x-2 text-sm">
+                <span>대시보드 열기</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+      {/* 가치 흐름 분석 */}
+      <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 mb-8 border border-slate-200/50 dark:border-slate-700/50 shadow-xl">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <BarChart3 className="w-6 h-6 text-blue-500" />
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center space-x-3">
+              <span>가치 흐름 분석</span>
+            </h2>
+          </div>
+          <button className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium text-sm flex items-center space-x-1">
+            <span>세부 분석 보기</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+        <p className="text-slate-600 dark:text-slate-400 mb-6">당신의 본질적 가치 카테고리별 활동 패턴과 변화 추이를 분석합니다.</p>
+        <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200/50 dark:border-slate-700/50 shadow-xl">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center space-x-3">
+              <Target className="w-6 h-6 text-blue-500" />
+              <span>가치 흐름 분석</span>
+            </h2>
+            <div className="flex items-center space-x-2 text-sm text-slate-500 dark:text-slate-400">
+              <Calendar className="w-4 h-4" />
+              <span>지난 7일</span>
+            </div>
+          </div>
+          <div className="space-y-4 mb-8">
+            {/* 예시 카테고리 1 */}
+            <div className="group cursor-pointer p-5 rounded-2xl border border-slate-200/50 dark:border-slate-700/50 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 transition-all duration-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4 flex-1">
+                  <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center text-white shadow-lg">
+                    <Target className="w-6 h-6" />
+                  </div>
                   <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">
-                        {topic.topic}
-                      </span>
+                    <div className="flex items-center space-x-3 mb-2">
+                      <h3 className="font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">자기 개발</h3>
+                      <button className="opacity-0 group-hover:opacity-100 p-1 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition-all duration-200">
+                        <PenLine className="w-4 h-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" />
+                      </button>
+                    </div>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">개인 성장과 역량 향상</p>
+                    <div className="flex items-center space-x-6">
                       <div className="flex items-center space-x-2">
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          {topic.notes}개
-                        </span>
-                        <span className="text-xs text-green-600 font-medium">
-                          {topic.growth}
-                        </span>
+                        <span className="text-2xl font-bold text-slate-900 dark:text-white">42%</span>
+                        <span className="text-sm text-slate-500 dark:text-slate-400">비중</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-lg font-semibold text-slate-700 dark:text-slate-300">18회</span>
+                        <span className="text-sm text-slate-500 dark:text-slate-400">활동</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium text-green-600 dark:text-green-400">+15%</span>
+                        <span className="text-sm text-slate-500 dark:text-slate-400">주간 변화</span>
                       </div>
                     </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div 
-                        className="bg-purple-500 h-2 rounded-full" 
-                        style={{ width: `${topic.percentage}%` }}
-                      ></div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <div className="text-right">
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">7일 추이</div>
+                    <svg width="60" height="20" className="overflow-visible"><polyline points="0,20 10,15.588235294117647 20,11.176470588235293 30,8.529411764705884 40,5 50,6.764705882352942 60,5" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-blue-500"></polyline></svg>
+                  </div>
+                  <ChevronDown className="w-5 h-5 text-slate-400 group-hover:text-blue-500 transition-colors transform group-hover:rotate-180 duration-200" />
+                </div>
+              </div>
+            </div>
+            {/* 예시 카테고리 2 */}
+            <div className="group cursor-pointer p-5 rounded-2xl border border-slate-200/50 dark:border-slate-700/50 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 transition-all duration-200">
+              <div className="flex items-start space-x-4">
+                <div className="text-3xl">😰</div>
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <h3 className="font-bold text-slate-900 dark:text-white text-lg group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">새로운 도전에 대한 두려움</h3>
+                    <span className="text-xs px-2 py-1 rounded-full font-medium text-purple-500 bg-purple-100 dark:bg-purple-900/30">본질적 가치 연결</span>
+                  </div>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 line-clamp-1">안전한 길과 모험적인 길 사이에서 고민하는 마음을...</p>
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-1 text-xs text-slate-500 dark:text-slate-400">
+                      <Clock className="w-3 h-3" />
+                      <span>3일 전</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Tag className="w-3 h-3 text-slate-400" />
+                      <div className="flex space-x-1">
+                        <span className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 py-1 rounded-full">#도전</span>
+                        <span className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 py-1 rounded-full">#두려움</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              ))}
+                <div className="flex items-center space-x-3">
+                  <div className="text-right">
+                    <div className="text-sm font-bold text-slate-900 dark:text-white">87%</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">연관도</div>
+                  </div>
+                  <button className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <ArrowRight className="w-4 h-4 text-slate-400 hover:text-blue-500 transition-colors" />
+                  </button>
+                </div>
+              </div>
+            </div>
+            {/* 예시 카테고리 3 */}
+            <div className="group cursor-pointer p-5 rounded-2xl border transition-all duration-200 border-slate-200/50 dark:border-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50/50 dark:hover:bg-slate-700/30">
+              <div className="flex items-start justify-between">
+                <div className="flex items-start space-x-4 flex-1">
+                  <div className="text-2xl">💡</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <h3 className="font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">오늘의 영감 노트</h3>
+                      <span className="text-xs px-2 py-1 rounded-full font-medium text-orange-500 bg-orange-100 dark:bg-orange-900/30">주제 연결</span>
+                    </div>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 line-clamp-1">산책 중에 떠오른 아이디어들을 빠르게 기록...</p>
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-1 text-xs text-slate-500 dark:text-slate-400">
+                        <Clock className="w-3 h-3" />
+                        <span>1일 전</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Tag className="w-3 h-3 text-slate-400" />
+                        <div className="flex space-x-1">
+                          <span className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 py-1 rounded-full">#영감</span>
+                          <span className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 py-1 rounded-full">#아이디어</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="text-right">
+                    <div className="text-sm font-bold text-slate-900 dark:text-white">78%</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">연관도</div>
+                  </div>
+                  <button className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <ArrowRight className="w-4 h-4 text-slate-400 hover:text-blue-500 transition-colors" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-2xl border border-blue-100 dark:border-blue-800/30">
+            <div className="flex items-center space-x-2 mb-2">
+              <Brain className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <span className="text-sm font-bold text-blue-900 dark:text-blue-300">AI 인사이트</span>
+            </div>
+            <p className="text-sm text-blue-700 dark:text-blue-400">이 노트들은 모두 '성장과 도전'이라는 공통 주제로 연결되어 있어요. 시간이 지나면서 생각이 어떻게 발전하고 있는지 확인해보세요.</p>
+          </div>
+        </div>
+      </div>
+      {/* 프리미엄 업그레이드 */}
+      <div className="mb-8">
+        <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 rounded-2xl p-6 text-white relative overflow-hidden">
+          <div className="absolute inset-0 bg-black/10"></div>
+          <div className="relative">
+            <div className="flex items-center space-x-3 mb-4">
+              <Crown className="w-6 h-6" />
+              <h3 className="text-xl font-bold">프리미엄으로 업그레이드</h3>
+            </div>
+            <p className="text-purple-100 mb-6">더 강력한 AI 기능과 무제한 연동으로 생산성을 극대화하세요.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="flex items-center space-x-3">
+                <Check className="w-5 h-5 text-green-300" />
+                <div>
+                  <div className="font-medium">고급 AI 분석</div>
+                  <div className="text-sm text-purple-200">더 정교한 감정 분석과 패턴 인식</div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <Check className="w-5 h-5 text-green-300" />
+                <div>
+                  <div className="font-medium">외부 툴 연동</div>
+                  <div className="text-sm text-purple-200">노션, 옵시디언 등과 무제한 연동</div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <Check className="w-5 h-5 text-green-300" />
+                <div>
+                  <div className="font-medium">무제한 메모</div>
+                  <div className="text-sm text-purple-200">메모 개수 제한 없이 자유롭게 작성</div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <Check className="w-5 h-5 text-green-300" />
+                <div>
+                  <div className="font-medium">우선 고객 지원</div>
+                  <div className="text-sm text-purple-200">24시간 내 답변 보장</div>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold">₩9,900</div>
+                <div className="text-sm text-purple-200">월 구독</div>
+              </div>
+              <button className="bg-white/20 hover:bg-white/30 backdrop-blur-sm px-6 py-3 rounded-xl font-medium transition-all duration-200 flex items-center space-x-2">
+                <Sparkles className="w-5 h-5" />
+                <span>지금 업그레이드</span>
+              </button>
             </div>
           </div>
         </div>
-
-        {/* AI 인사이트 */}
-        <div className="card p-6">
-          <div className="flex items-center space-x-2 mb-6">
-            <Brain className="w-5 h-5 text-indigo-600" />
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">AI 인사이트</h2>
-            <span className="text-sm text-gray-500 dark:text-gray-400">패턴 분석 및 개선 제안</span>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {aiInsights.map((insight, index) => (
-              <div key={index} className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-lg p-4 border border-indigo-200 dark:border-indigo-800">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-2">
-                    {insight.type === 'pattern' && <Activity className="w-4 h-4 text-indigo-600" />}
-                    {insight.type === 'growth' && <TrendingUp className="w-4 h-4 text-green-600" />}
-                    {insight.type === 'connection' && <Zap className="w-4 h-4 text-yellow-600" />}
-                    <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300">
-                      {insight.type === 'pattern' ? '패턴 발견' : 
-                       insight.type === 'growth' ? '성장 기회' : '연결성 분석'}
-                    </span>
-                  </div>
-                  <span className="text-xs bg-indigo-100 dark:bg-indigo-800 text-indigo-700 dark:text-indigo-300 px-2 py-1 rounded-full">
-                    {insight.confidence}%
-                  </span>
-                </div>
-                
-                <h4 className="font-medium text-gray-900 dark:text-white mb-2">
-                  {insight.title}
-                </h4>
-                
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                  {insight.content}
-                </p>
-                
-                {insight.actionable && (
-                  <button className="w-full bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-800 dark:hover:bg-indigo-700 text-indigo-700 dark:text-indigo-300 text-xs font-medium py-2 px-3 rounded-lg transition-colors">
-                    실행 계획 세우기
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
+      </div>
+      {/* 피드백 */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50">
+        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">AI 개선을 위한 피드백</h3>
+        <p className="text-slate-600 dark:text-slate-400 mb-4">추천이 도움이 되었나요? 더 나은 추천을 위해 의견을 들려주세요.</p>
+        <div className="flex flex-col sm:flex-row gap-4">
+          <textarea placeholder="피드백을 입력해주세요..." className="flex-1 p-4 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none" rows={3}></textarea>
+          <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium transition-colors self-start">피드백 전송</button>
         </div>
       </div>
     </div>
