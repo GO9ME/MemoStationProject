@@ -1,0 +1,29 @@
+/* 기본 설정은 index.css에서 처리 */
+
+.App {
+  text-align: left;
+}
+
+/* 스무스 스크롤 */
+html {
+  scroll-behavior: smooth;
+}
+
+/* 포커스 상태 개선 */
+*:focus {
+  outline: 2px solid #0ea5e9;
+  outline-offset: 2px;
+}
+
+/* 애니메이션 성능 최적화 */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 리스트 스타일 리셋 */
+ul, ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+} 
