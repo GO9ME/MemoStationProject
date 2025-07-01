@@ -8,6 +8,7 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import NoteDetail from './pages/NoteDetail';
 import ManageIntegration from './pages/ManageIntegration';
+import FloatingActionButtons from './components/FloatingActionButtons';
 import './App.css';
 
 function App() {
@@ -38,6 +39,7 @@ function App() {
     <Router>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
         <Navbar darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+        <FloatingActionButtons />
         <main className="pt-16">
           <Routes>
             <Route path="/" element={<Home />} />
