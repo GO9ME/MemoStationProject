@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
-  Home, 
   FileText, 
   Search, 
   BarChart3, 
@@ -48,7 +47,7 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
   };
 
   const navItems = [
-    { path: '/', label: '홈', icon: Home, emoji: '🏠' },
+    // { path: '/', label: '홈', icon: Home, emoji: '🏠' }, // 홈 버튼 제거
     { path: '/notes', label: '내 노트', icon: FileText, emoji: '📝' },
     { path: '/explore', label: '추천', icon: Search, emoji: '🔍' },
     { path: '/reports', label: '리포트', icon: BarChart3, emoji: '📊' },
