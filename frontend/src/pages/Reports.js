@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import {
-  Brain, Lightbulb, BookOpen, ArrowRight, PenLine, AlertCircle, Target, Heart,
-  Eye, Clock, Play, TrendingUp, Compass, Zap, BarChart3, ChevronDown, Puzzle,
-  Link2, Sparkles, Check, Crown, X, Calendar, Tag, CheckCircle, Award
+  Brain, Lightbulb, BookOpen, ArrowRight, PenLine, AlertCircle, Target, Heart, Eye, Clock, Play,
+  TrendingUp, Compass, Zap, BarChart3, ChevronDown, Link2, Sparkles, Check, Crown, Calendar, Tag, CheckCircle, Award
 } from 'lucide-react';
 import UpgradeModal from '../components/UpgradeModal';
 import PaymentModal from '../components/PaymentModal';
@@ -12,78 +10,6 @@ const Reports = () => {
   const [activeReportTab, setActiveReportTab] = useState('monthly');
   const [isUpgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [isPaymentModalOpen, setPaymentModalOpen] = useState(false);
-  const [expandedValueStreamId, setExpandedValueStreamId] = useState(null);
-  const [activeConnectionId, setActiveConnectionId] = useState('connection-2');
-  const [reminderOpenId, setReminderOpenId] = useState(null);
-
-  const importantNotesData = [
-    { id: 1, emoji: '🤔', title: '창의성에 대한 고민', description: '창의적인 아이디어가 나오지 않을 때의 답답함과 그것을 극복하는 방법에 대해...', reason: '이 노트 이후 유사 주제 3건 발생', importance: 85, relatedCount: 3, age: 12, actionText: '실천 계획 작성하기' },
-    { id: 2, emoji: '😰', title: '새로운 도전에 대한 두려움', description: '안전한 길과 도전적인 길 사이에서의 고민, 실패에 대한 두려움을 어떻게...', reason: '실행 계획 미작성 상태', importance: 92, relatedCount: 5, age: 8, actionText: '이 노트로 루틴 생성' }
-  ];
-
-  const reviewNotesData = [
-    { id: 3, emoji: '🤔', timeText: '12일 전 노트를 잊고 계시네요', title: '창의성에 대한 고민', description: '창의적인 아이디어가 나오지 않을 때의 답답함과 그것을 극복하는 방법에 대해...', importance: 85, relatedCount: 3 },
-    { id: 4, emoji: '😰', timeText: '8일 전 노트를 잊고 계시네요', title: '새로운 도전에 대한 두려움', description: '안전한 길과 도전적인 길 사이에서의 고민, 실패에 대한 두려움을 어떻게...', importance: 92, relatedCount: 5 }
-  ];
-
-  const [visibleReviewNotes, setVisibleReviewNotes] = useState(reviewNotesData.map(n => n.id));
-
-  const handleDismissReview = (id) => {
-    setVisibleReviewNotes(prev => prev.filter(noteId => noteId !== id));
-  };
-  
-  const valueStreamData = [
-    { id: 'dev', Icon: Target, color: 'blue', title: '자기 개발', description: '개인 성장과 역량 향상', weight: 42, count: 18, change: 15, trend: "0,20 10,15.588235294117647 20,11.176470588235293 30,8.529411764705884 40,5 50,6.764705882352942 60,5" },
-    { id: 'problem', Icon: Puzzle, color: 'green', title: '문제 해결', description: '구체적 문제의 해답 탐색', weight: 28, count: 12, change: 8, trend: "0,20 10,16.25 20,10.625 30,8.75 40,5 50,6.875 60,5" },
-    { id: 'info', Icon: BarChart3, color: 'purple', title: '정보 정리', description: '지식 체계화와 구조화', weight: 30, count: 13, change: -5, trend: "0,5 10,9.285714285714285 20,11.428571428571429 30,15.714285714285715 40,20 50,17.857142857142858 60,15.714285714285715" }
-  ];
-
-  const connectedNotesData = [
-    { id: 'connection-1', emoji: '🤔', title: '창의성 블록 극복하기', type: '키워드 연결', typeColor: 'blue', description: '아이디어가 막혔을 때 사용하는 나만의 방법들을 정리해보았다...', age: 5, tags: ['#창의성', '#문제해결'], relevance: 92 },
-    { id: 'connection-2', emoji: '😰', title: '새로운 도전에 대한 두려움', type: '본질적 가치 연결', typeColor: 'purple', description: '안전한 길과 모험적인 길 사이에서 고민하는 마음을...', age: 3, tags: ['#도전', '#두려움'], relevance: 87 },
-    { id: 'connection-3', emoji: '💡', title: '오늘의 영감 노트', type: '주제 연결', typeColor: 'orange', description: '산책 중에 떠오른 아이디어들을 빠르게 기록...', age: 1, tags: ['#영감', '#아이디어'], relevance: 78 },
-  ];
-
-  const toggleValueStream = (id) => {
-    setExpandedValueStreamId(prevId => (prevId === id ? null : id));
-  };
-  
-  // 리마인드 알림 모달 컴포넌트 (내부 선언)
-  function ReminderModal({ open, onClose }) {
-    if (!open) return null;
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-8 w-full max-w-md animate-in fade-in">
-          <div className="mb-6">
-            <span className="font-medium text-green-900 dark:text-green-300">리마인드 알림 받기</span>
-          </div>
-          <label className="relative inline-flex items-center cursor-pointer mb-6">
-            <input type="checkbox" className="sr-only peer" checked readOnly />
-            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-green-600"></div>
-          </label>
-          <div className="space-y-3 mb-6">
-            <div className="flex items-center space-x-3">
-              <span className="text-sm text-green-700 dark:text-green-400">알림 주기:</span>
-              <select className="px-3 py-2 bg-white dark:bg-slate-800 border border-green-300 dark:border-green-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50">
-                <option value="1">1일 후</option>
-                <option value="3">3일 후</option>
-                <option value="7">7일 후</option>
-                <option value="14">14일 후</option>
-              </select>
-            </div>
-            <p className="text-xs text-green-600 dark:text-green-400">설정한 기간 후에 실천 상황을 확인하는 알림을 보내드려요.</p>
-          </div>
-          <div className="flex justify-between pt-6">
-            <button onClick={onClose} className="px-6 py-3 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">취소</button>
-            <button disabled className="px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 dark:disabled:bg-slate-600 text-white rounded-xl font-medium transition-colors flex items-center space-x-2">
-              <span>실천 계획 저장</span>
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-right w-4 h-4"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
