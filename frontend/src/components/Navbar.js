@@ -5,7 +5,7 @@ import {
   Search, 
   BarChart3, 
   Settings, 
-  Sun, 
+  Sun,
   Moon, 
   Monitor,
   Bell,
