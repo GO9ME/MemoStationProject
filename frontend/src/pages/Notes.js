@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  Filter, List, LayoutGrid, TrendingUp, ArrowRight, Lightbulb, Plus, Zap, PenLine, Star, Search, Brain, Tag, Link2, Clock, X, HelpCircle, CheckCircle
+  Filter, List, LayoutGrid, TrendingUp, ArrowRight, Lightbulb, Plus, Zap, PenLine, Star, Search, Brain, Tag, Link2, Clock, X, HelpCircle, CheckCircle, Sparkles
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -59,6 +59,35 @@ const noteList = [
   },
 ];
 
+const MEMO_NOTES_API = 'http://localhost:8000/api/memo-notes';
+
+const PAGE_SIZE = 5; // 무한스크롤 기준 5개씩
+const BOARD_COLORS = [
+  'bg-yellow-50', 'bg-orange-50', 'bg-amber-50', 'bg-lime-50', 'bg-rose-50', 'bg-sky-50', 'bg-violet-50', 'bg-pink-50'
+];
+const PIN_ICONS = [
+  <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange-400"><circle cx="12" cy="6" r="2"/><path d="M12 8v10M9 18h6"/></svg>,
+  <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500"><rect x="10" y="2" width="4" height="4" rx="2"/><path d="M12 6v14"/></svg>,
+  <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-rose-400"><circle cx="12" cy="4" r="2"/><path d="M12 6v14"/></svg>
+];
+
+// Notion 페이지에서 제목 속성을 자동으로 추출하는 함수
+function getNotionPageTitle(page) {
+  if (!page.properties) return "(제목 없음)";
+  const titleProp = Object.values(page.properties).find(
+    prop => prop.type === "title"
+  );
+  if (
+    titleProp &&
+    titleProp.title &&
+    titleProp.title.length > 0 &&
+    titleProp.title[0].plain_text
+  ) {
+    return titleProp.title[0].plain_text;
+  }
+  return "(제목 없음)";
+}
+
 // ========================= Notes 컴포넌트 =========================
 const Notes = () => {
   // 정렬, 필터, 뷰 상태
@@ -96,7 +125,69 @@ const Notes = () => {
   // 방식 선택 모달 상태 추가
   const [showPlanModeSelectModal, setShowPlanModeSelectModal] = useState(false);
 
+  // 노트 목록 상태
+  const [notes, setNotes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // 무한스크롤 상태
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const observer = useRef();
+
   const navigate = useNavigate();
+
+  // 카드 누적 로딩
+  const fetchMoreNotes = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${MEMO_NOTES_API}?page=${page}&size=${PAGE_SIZE}`);
+      if (!res.ok) throw new Error('메모 데이터를 불러올 수 없습니다.');
+      const data = await res.json();
+      const parsed = data.notes.map((row, idx) => ({
+        id: (page-1)*PAGE_SIZE + idx + 1,
+        emoji: '📝',
+        title: row.date || '(제목 없음)',
+        desc: row.content ? row.content.slice(0, 100) : '',
+        value: row.style || '',
+        valueColor: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
+        ai: false,
+        aiColor: '',
+        review: '',
+        reviewColor: '',
+        tags: row.interests ? row.interests.split(',').map(t=>t.trim()).filter(Boolean) : [],
+        connections: 0,
+        time: row.date || '',
+        stars: 0,
+        progress: 0,
+      }));
+      setNotes(prev => [...prev, ...parsed]);
+      setHasMore((page * PAGE_SIZE) < data.total);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [page]);
+
+  // 최초/페이지 변경 시 데이터 fetch
+  useEffect(() => {
+    fetchMoreNotes();
+    // eslint-disable-next-line
+  }, [page]);
+
+  // 무한스크롤 IntersectionObserver
+  const lastNoteRef = useCallback(node => {
+    if (loading) return;
+    if (observer.current) observer.current.disconnect();
+    observer.current = new window.IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        setPage(prev => prev + 1);
+      }
+    });
+    if (node) observer.current.observe(node);
+  }, [loading, hasMore]);
 
   // 별점 렌더링 함수
   const renderStars = (count) => (
@@ -132,456 +223,137 @@ const Notes = () => {
     },
   ];
 
+  // 에러 발생 시 상단에 안내 메시지 및 재시도 버튼 표시
+  const handleRetry = () => {
+    setError(null);
+    setPage(1);
+    setNotes([]);
+    setHasMore(true);
+  };
+
+  // 필터 섹션별 토글 상태 (기본값: 모두 닫힘)
+  const [openSort, setOpenSort] = useState(false);
+  const [openValue, setOpenValue] = useState(false);
+  const [openReview, setOpenReview] = useState(false);
+  const [openKeyword, setOpenKeyword] = useState(false);
+  const [openAI, setOpenAI] = useState(false);
+
+  // 전체 화면 레이아웃을 중앙 max-w-7xl, 좌우 여백, flex로 감싸도록 변경
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-korean">
-      {/* 질문 기반 노트 작성 모달 */}
-      {showGuideModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200 dark:border-slate-700">
-            {/* 상단 sticky 헤더 */}
-            <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-6 rounded-t-2xl z-10">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-                    <Brain className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">추천 노트 생성</h2>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">AI가 분석한 당신의 관심사를 바탕으로 노트를 작성해보세요</p>
-                  </div>
-                </div>
-                <button className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors" onClick={()=>setShowGuideModal(false)}><X className="w-6 h-6" /></button>
-              </div>
-            </div>
-            <div className="p-6">
-              <div className="space-y-6">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center space-x-3">
-                    <button className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" onClick={()=>{setShowGuideModal(false);setShowModeModal(true);}}>←</button>
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">질문 기반 노트 작성</h3>
-                  </div>
-                  <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full text-sm font-medium">Guided Mode</div>
-                </div>
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200/50 dark:border-blue-800/50 mb-6">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Lightbulb className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                    <span className="text-sm font-bold text-blue-900 dark:text-blue-300">AI 추천 제목</span>
-                  </div>
-                  <p className="text-blue-700 dark:text-blue-400 font-medium">실행 강화를 위한 개인 전략 수립</p>
-                </div>
-                <div className="space-y-6">
-                  {/* 질문 1 */}
-                  <div className="bg-slate-50 dark:bg-slate-700/30 rounded-2xl p-6">
-                    <div className="flex items-center space-x-3 mb-4">
-                      <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold text-sm">1</div>
-                      <h4 className="text-lg font-semibold text-slate-900 dark:text-white">지금 해결하고 싶은 문제는?</h4>
-                    </div>
-                    <textarea placeholder="예: 업무 효율성이 떨어져서 야근이 잦아지고 있다" className="w-full p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400" rows={4} value={guideAnswers[0]} onChange={e=>setGuideAnswers([e.target.value, guideAnswers[1], guideAnswers[2]])} />
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">💡 구체적인 상황이나 어려움을 적어보세요</p>
-                  </div>
-                  {/* 질문 2 */}
-                  <div className="bg-slate-50 dark:bg-slate-700/30 rounded-2xl p-6">
-                    <div className="flex items-center space-x-3 mb-4">
-                      <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold text-sm">2</div>
-                      <h4 className="text-lg font-semibold text-slate-900 dark:text-white">최근 어떤 시도를 해봤나요?</h4>
-                    </div>
-                    <textarea placeholder="예: 할 일 목록을 만들어봤지만 지키지 못했다" className="w-full p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400" rows={4} value={guideAnswers[1]} onChange={e=>setGuideAnswers([guideAnswers[0], e.target.value, guideAnswers[2]])} />
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">💡 이미 시도해본 방법들과 그 결과를 적어보세요</p>
-                  </div>
-                  {/* 질문 3 */}
-                  <div className="bg-slate-50 dark:bg-slate-700/30 rounded-2xl p-6">
-                    <div className="flex items-center space-x-3 mb-4">
-                      <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold text-sm">3</div>
-                      <h4 className="text-lg font-semibold text-slate-900 dark:text-white">다음에 어떤 방식으로 바꾸어 볼 수 있나요?</h4>
-                    </div>
-                    <textarea placeholder="예: 시간 블록킹 방식을 도입해보고 싶다" className="w-full p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400" rows={4} value={guideAnswers[2]} onChange={e=>setGuideAnswers([guideAnswers[0], guideAnswers[1], e.target.value])} />
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">💡 새롭게 시도해보고 싶은 접근법을 적어보세요</p>
-                  </div>
-                </div>
-                <div className="flex justify-between pt-6">
-                  <button className="px-6 py-3 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors" onClick={()=>{setShowGuideModal(false);setShowModeModal(true);}}>방식 변경</button>
-                  <button disabled={guideAnswers.some(a=>!a)} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 dark:disabled:bg-slate-600 text-white rounded-xl font-medium transition-colors flex items-center space-x-2">
-                    <span>노트 저장</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* 방식 선택 모달 */}
-      {showModeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200 dark:border-slate-700">
-            {/* 상단 sticky 헤더 */}
-            <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-6 rounded-t-2xl z-10">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-                    <Brain className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">추천 노트 생성</h2>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">AI가 분석한 당신의 관심사를 바탕으로 노트를 작성해보세요</p>
-                  </div>
-                </div>
-                <button className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors" onClick={()=>setShowModeModal(false)}><X className="w-6 h-6" /></button>
-              </div>
-            </div>
-            <div className="p-6">
-              <div className="space-y-6">
-                <div className="text-center mb-8">
-                  <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">작성 방식을 선택해주세요</h3>
-                  <p className="text-slate-600 dark:text-slate-400">당신에게 맞는 노트 작성 방식을 선택하여 더 효과적으로 생각을 정리해보세요</p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Guided Mode */}
-                  <button className="p-8 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-2xl hover:border-blue-400 dark:hover:border-blue-600 transition-all duration-200 text-left group" onClick={()=>{setShowModeModal(false);setShowGuideModal(true);}}>
-                    <div className="flex items-center space-x-3 mb-4">
-                      <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <HelpCircle className="w-6 h-6 text-white" />
-                      </div>
-                      <div>
-                        <h4 className="text-xl font-bold text-slate-900 dark:text-white">🧭 Guided Mode</h4>
-                        <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">질문 기반 템플릿</p>
-                      </div>
-                    </div>
-                    <p className="text-slate-600 dark:text-slate-400 mb-4">질문에 따라 작성해보세요. AI가 단계별로 안내하여 체계적인 사고 정리를 도와드립니다.</p>
-                    <div className="flex items-center space-x-2 text-blue-600 dark:text-blue-400">
-                      <CheckCircle className="w-4 h-4" />
-                      <span className="text-sm font-medium">초보자 추천</span>
-                    </div>
-                  </button>
-                  {/* Expert Mode */}
-                  <button className="p-8 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-2 border-purple-200 dark:border-purple-800 rounded-2xl hover:border-purple-400 dark:hover:border-purple-600 transition-all duration-200 text-left group" onClick={()=>{setShowModeModal(false);setShowExpertModal(true);}}>
-                    <div className="flex items-center space-x-3 mb-4">
-                      <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <PenLine className="w-6 h-6 text-white" />
-                      </div>
-                      <div>
-                        <h4 className="text-xl font-bold text-slate-900 dark:text-white">✍️ Expert Mode</h4>
-                        <p className="text-sm text-purple-600 dark:text-purple-400 font-medium">빈 구조형 템플릿</p>
-                      </div>
-                    </div>
-                    <p className="text-slate-600 dark:text-slate-400 mb-4">자신의 흐름에 따라 자유롭게 작성하세요. 경험이 있는 사용자에게 적합한 자유 형식입니다.</p>
-                    <div className="flex items-center space-x-2 text-purple-600 dark:text-purple-400">
-                      <Zap className="w-4 h-4" />
-                      <span className="text-sm font-medium">자유도 높음</span>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* 자유 형식 노트 작성 모달 */}
-      {showExpertModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200 dark:border-slate-700">
-            {/* 상단 sticky 헤더 */}
-            <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-6 rounded-t-2xl z-10">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-                    <Brain className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">추천 노트 생성</h2>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">AI가 분석한 당신의 관심사를 바탕으로 노트를 작성해보세요</p>
-                  </div>
-                </div>
-                <button className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors" onClick={()=>setShowExpertModal(false)}><X className="w-6 h-6" /></button>
-              </div>
-            </div>
-            <div className="p-6">
-              <div className="space-y-6">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center space-x-3">
-                    <button className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" onClick={()=>{setShowExpertModal(false);setShowModeModal(true);}}>←</button>
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">자유 형식 노트 작성</h3>
-                  </div>
-                  <div className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-3 py-1 rounded-full text-sm font-medium">Expert Mode</div>
-                </div>
-                <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4 border border-purple-200/50 dark:border-purple-800/50 mb-6">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Lightbulb className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                    <span className="text-sm font-bold text-purple-900 dark:text-purple-300">AI 추천 제목</span>
-                  </div>
-                  <input type="text" className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400" placeholder="노트 제목을 입력하세요" value={expertTitle} onChange={e=>setExpertTitle(e.target.value)} />
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">본문</label>
-                    <textarea placeholder="자유롭게 생각을 정리해보세요..." className="w-full p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/50 resize-none text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400" rows={12} value={expertBody} onChange={e=>setExpertBody(e.target.value)} />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">태그</label>
-                    <input type="text" placeholder="태그를 쉼표로 구분하여 입력하세요 (예: 실행, 계획, 생산성)" className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400" value={expertTags} onChange={e=>setExpertTags(e.target.value)} />
-                  </div>
-                </div>
-                <div className="flex justify-between pt-6">
-                  <button className="px-6 py-3 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors" onClick={()=>{setShowExpertModal(false);setShowModeModal(true);}}>방식 변경</button>
-                  <button disabled={!expertTitle || !expertBody || !expertTags} className="px-6 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-300 dark:disabled:bg-slate-600 text-white rounded-xl font-medium transition-colors flex items-center space-x-2">
-                    <span>노트 저장</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* 루틴 생성 모달 */}
-      {showRoutineModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 max-w-2xl w-full max-h-[80vh] overflow-y-auto shadow-2xl border border-slate-200 dark:border-slate-700">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white">AI 추천 정리 루틴 생성</h3>
-              <button className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" onClick={()=>setShowRoutineModal(false)}><X className="w-6 h-6" /></button>
-            </div>
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">루틴 제목</label>
-                <input type="text" className="w-full p-3 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400" value={routineTitle} onChange={e=>setRoutineTitle(e.target.value)} placeholder="루틴 제목을 입력하세요" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">실행 주기</label>
-                  <select className="w-full p-3 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-slate-900 dark:text-white" value={routineCycle} onChange={e=>setRoutineCycle(e.target.value)}>
-                    <option>매일</option>
-                    <option>주 3회</option>
-                    <option>주말만</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">선호 시간대</label>
-                  <select className="w-full p-3 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-slate-900 dark:text-white" value={routineTime} onChange={e=>setRoutineTime(e.target.value)}>
-                    <option>오전 (9-12시)</option>
-                    <option>오후 (13-18시)</option>
-                    <option>저녁 (19-22시)</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <h4 className="font-medium text-slate-700 dark:text-slate-200 mb-3">포함될 노트</h4>
-                <div className="space-y-2">
-                  {routineNoteOptions.map(note => (
-                    <div key={note.id} className="flex items-center space-x-3 p-3 bg-slate-50 dark:bg-slate-700/30 rounded-xl">
-                      <input type="checkbox" className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" checked={routineNotes.includes(note.id)} onChange={()=>setRoutineNotes(list=>list.includes(note.id)?list.filter(x=>x!==note.id):[...list, note.id])} />
-                      <div className="flex-1">
-                        <div className="font-medium text-slate-900 dark:text-white">{note.title}</div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400">{note.desc}</div>
-                      </div>
-                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${note.levelColor}`}>{note.level}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="flex space-x-3 mt-8">
-              <button className="flex-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-4 py-3 rounded-xl font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors" onClick={()=>setShowRoutineModal(false)}>취소</button>
-              <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-xl font-medium transition-colors" onClick={()=>setShowRoutineModal(false)}>루틴 생성</button>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* 실천계획 3개 작성하기 모달 */}
-      {showPlanModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200 dark:border-slate-700">
-            {/* 상단 sticky 헤더 */}
-            <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-6 rounded-t-2xl z-10">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-                    <Brain className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">추천 노트 생성</h2>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">AI가 분석한 당신의 관심사를 바탕으로 노트를 작성해보세요</p>
-                  </div>
-                </div>
-                <button className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors" onClick={()=>setShowPlanModal(false)}><X className="w-6 h-6" /></button>
-              </div>
-            </div>
-            <div className="p-6">
-              <div className="space-y-6">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center space-x-3">
-                    <button className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" onClick={()=>setShowPlanModal(false)}>←</button>
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">자유 형식 노트 작성</h3>
-                  </div>
-                  <div className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-3 py-1 rounded-full text-sm font-medium">Expert Mode</div>
-                </div>
-                <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4 border border-purple-200/50 dark:border-purple-800/50 mb-6">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Lightbulb className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                    <span className="text-sm font-bold text-purple-900 dark:text-purple-300">AI 추천 제목</span>
-                  </div>
-                  <input type="text" className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400" placeholder="노트 제목을 입력하세요" value={expertTitle} onChange={e=>setExpertTitle(e.target.value)} />
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">본문</label>
-                    <textarea placeholder="자유롭게 생각을 정리해보세요..." className="w-full p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/50 resize-none text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400" rows={12} value={expertBody} onChange={e=>setExpertBody(e.target.value)} />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">태그</label>
-                    <input type="text" placeholder="태그를 쉼표로 구분하여 입력하세요 (예: 실행, 계획, 생산성)" className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-400" value={expertTags} onChange={e=>setExpertTags(e.target.value)} />
-                  </div>
-                </div>
-                <div className="flex justify-between pt-6">
-                  <button className="px-6 py-3 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors" onClick={()=>{setShowPlanModal(false); setShowPlanModeSelectModal(true);}}>방식 변경</button>
-                  <button disabled={!expertTitle || !expertBody || !expertTags} className="px-6 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-300 dark:disabled:bg-slate-600 text-white rounded-xl font-medium transition-colors flex items-center space-x-2">
-                    <span>노트 저장</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      {showPlanModeSelectModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200 dark:border-slate-700">
-            {/* 상단 sticky 헤더 */}
-            <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-6 rounded-t-2xl z-10">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-                    <Brain className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">추천 노트 생성</h2>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">AI가 분석한 당신의 관심사를 바탕으로 노트를 작성해보세요</p>
-                  </div>
-                </div>
-                <button className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors" onClick={()=>setShowPlanModeSelectModal(false)}><X className="w-6 h-6" /></button>
-              </div>
-            </div>
-            <div className="p-6">
-              <div className="space-y-6">
-                <div className="text-center mb-8">
-                  <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">작성 방식을 선택해주세요</h3>
-                  <p className="text-slate-600 dark:text-slate-400">당신에게 맞는 노트 작성 방식을 선택하여 더 효과적으로 생각을 정리해보세요</p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Guided Mode 버튼 */}
-                  <button className="p-8 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-2xl hover:border-blue-400 dark:hover:border-blue-600 transition-all duration-200 text-left group">
-                    <div className="flex items-center space-x-3 mb-4">
-                      <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <HelpCircle className="w-6 h-6 text-white" />
-                      </div>
-                      <div>
-                        <h4 className="text-xl font-bold text-slate-900 dark:text-white">🧭 Guided Mode</h4>
-                        <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">질문 기반 템플릿</p>
-                      </div>
-                    </div>
-                    <p className="text-slate-600 dark:text-slate-400 mb-4">질문에 따라 작성해보세요. AI가 단계별로 안내하여 체계적인 사고 정리를 도와드립니다.</p>
-                    <div className="flex items-center space-x-2 text-blue-600 dark:text-blue-400">
-                      <CheckCircle className="w-4 h-4" />
-                      <span className="text-sm font-medium">초보자 추천</span>
-                    </div>
-                  </button>
-                  {/* Expert Mode 버튼 */}
-                  <button className="p-8 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-2 border-purple-200 dark:border-purple-800 rounded-2xl hover:border-purple-400 dark:hover:border-purple-600 transition-all duration-200 text-left group">
-                    <div className="flex items-center space-x-3 mb-4">
-                      <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <PenLine className="w-6 h-6 text-white" />
-                      </div>
-                      <div>
-                        <h4 className="text-xl font-bold text-slate-900 dark:text-white">✍️ Expert Mode</h4>
-                        <p className="text-sm text-purple-600 dark:text-purple-400 font-medium">빈 구조형 템플릿</p>
-                      </div>
-                    </div>
-                    <p className="text-slate-600 dark:text-slate-400 mb-4">자신의 흐름에 따라 자유롭게 작성하세요. 경험이 있는 사용자에게 적합한 자유 형식입니다.</p>
-                    <div className="flex items-center space-x-2 text-purple-600 dark:text-purple-400">
-                      <Zap className="w-4 h-4" />
-                      <span className="text-sm font-medium">자유도 높음</span>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex gap-8">
-        {/* ========================= 좌측 스마트 필터 ========================= */}
+        {/* 좌측: 스마트 필터 (w-80, sticky) */}
         <aside className="w-80 flex-shrink-0 space-y-6 hidden lg:block">
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 sticky top-24">
             <h3 className="font-bold text-slate-900 dark:text-white mb-6 flex items-center space-x-2">
               <Filter className="w-5 h-5" />
               <span>스마트 필터</span>
             </h3>
-            {/* 정렬 */}
+            {/* 정렬 섹션 토글 */}
             <div className="mb-6">
-              <h4 className="font-medium text-slate-700 dark:text-slate-300 mb-3">정렬</h4>
-              <div className="space-y-2">
-                {['recent','importance','connections','forgetting'].map((key) => (
-                  <label key={key} className="flex items-center space-x-2 cursor-pointer">
-                    <input type="radio" name="sort" className="text-blue-600 focus:ring-blue-500" value={key} checked={sort===key} onChange={()=>setSort(key)} />
-                    <span className="text-sm text-slate-600 dark:text-slate-400">
-                      {key==='recent'?'최신순':key==='importance'?'중요도순':key==='connections'?'연결성순':'복습 필요순'}
-                    </span>
-                  </label>
-                ))}
-              </div>
+              <h4
+                className="font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center cursor-pointer select-none"
+                onClick={() => setOpenSort(v => !v)}
+              >
+                정렬
+                <span className="ml-2">{openSort ? '▲' : '▼'}</span>
+              </h4>
+              {openSort && (
+                <div className="space-y-2">
+                  {['recent','importance','connections','forgetting'].map((key) => (
+                    <label key={key} className="flex items-center space-x-2 cursor-pointer">
+                      <input type="radio" name="sort" className="text-blue-600 focus:ring-blue-500" value={key} checked={sort===key} onChange={()=>setSort(key)} />
+                      <span className="text-sm text-slate-600 dark:text-slate-400">
+                        {key==='recent'?'최신순':key==='importance'?'중요도순':key==='connections'?'연결성순':'복습 필요순'}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
-            {/* 본질적 가치 */}
+            {/* 본질적 가치 섹션 토글 */}
             <div className="mb-6">
-              <h4 className="font-medium text-slate-700 dark:text-slate-300 mb-3">본질적 가치</h4>
-              <div className="space-y-2">
-                {['자기 개발','문제 해결','정보 정리','창의적 탐색','실행 강화'].map((v) => (
-                  <label key={v} className="flex items-center space-x-2 cursor-pointer">
-                    <input type="checkbox" className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" checked={valueFilter.includes(v)} onChange={()=>setValueFilter(f=>f.includes(v)?f.filter(x=>x!==v):[...f,v])} />
-                    <span className="text-sm text-slate-600 dark:text-slate-400">{v}</span>
-                  </label>
-                ))}
-              </div>
+              <h4
+                className="font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center cursor-pointer select-none"
+                onClick={() => setOpenValue(v => !v)}
+              >
+                본질적 가치
+                <span className="ml-2">{openValue ? '▲' : '▼'}</span>
+              </h4>
+              {openValue && (
+                <div className="space-y-2">
+                  {['자기 개발','문제 해결','정보 정리','창의적 탐색','실행 강화'].map((v) => (
+                    <label key={v} className="flex items-center space-x-2 cursor-pointer">
+                      <input type="checkbox" className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" checked={valueFilter.includes(v)} onChange={()=>setValueFilter(f=>f.includes(v)?f.filter(x=>x!==v):[...f,v])} />
+                      <span className="text-sm text-slate-600 dark:text-slate-400">{v}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
-            {/* 복습 상태 */}
+            {/* 복습 상태 섹션 토글 */}
             <div className="mb-6">
-              <h4 className="font-medium text-slate-700 dark:text-slate-300 mb-3">복습 상태</h4>
-              <div className="space-y-2">
-                {['기억 선명','복습 권장','복습 필요'].map((v) => (
-                  <label key={v} className="flex items-center space-x-2 cursor-pointer">
-                    <input type="checkbox" className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" checked={reviewFilter.includes(v)} onChange={()=>setReviewFilter(f=>f.includes(v)?f.filter(x=>x!==v):[...f,v])} />
-                    <span className={`text-sm ${v==='기억 선명'?'text-green-600':v==='복습 권장'?'text-yellow-600':'text-red-600'}`}>{v}</span>
-                  </label>
-                ))}
-              </div>
+              <h4
+                className="font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center cursor-pointer select-none"
+                onClick={() => setOpenReview(v => !v)}
+              >
+                복습 상태
+                <span className="ml-2">{openReview ? '▲' : '▼'}</span>
+              </h4>
+              {openReview && (
+                <div className="space-y-2">
+                  {['기억 선명','복습 권장','복습 필요'].map((v) => (
+                    <label key={v} className="flex items-center space-x-2 cursor-pointer">
+                      <input type="checkbox" className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" checked={reviewFilter.includes(v)} onChange={()=>setReviewFilter(f=>f.includes(v)?f.filter(x=>x!==v):[...f,v])} />
+                      <span className={`text-sm ${v==='기억 선명'?'text-green-600':v==='복습 권장'?'text-yellow-600':'text-red-600'}`}>{v}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
-            {/* 키워드 */}
+            {/* 키워드 섹션 토글 */}
             <div className="mb-6">
-              <h4 className="font-medium text-slate-700 dark:text-slate-300 mb-3">키워드</h4>
-              <div className="space-y-2">
-                {['#디자인','#AI','#생산성','#성찰','#기술','#개인'].map((v) => (
-                  <label key={v} className="flex items-center space-x-2 cursor-pointer">
-                    <input type="checkbox" className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" checked={keywordFilter.includes(v)} onChange={()=>setKeywordFilter(f=>f.includes(v)?f.filter(x=>x!==v):[...f,v])} />
-                    <span className="text-sm text-slate-600 dark:text-slate-400">{v}</span>
-                  </label>
-                ))}
-              </div>
+              <h4
+                className="font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center cursor-pointer select-none"
+                onClick={() => setOpenKeyword(v => !v)}
+              >
+                키워드
+                <span className="ml-2">{openKeyword ? '▲' : '▼'}</span>
+              </h4>
+              {openKeyword && (
+                <div className="space-y-2">
+                  {['#디자인','#AI','#생산성','#성찰','#기술','#개인'].map((v) => (
+                    <label key={v} className="flex items-center space-x-2 cursor-pointer">
+                      <input type="checkbox" className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" checked={keywordFilter.includes(v)} onChange={()=>setKeywordFilter(f=>f.includes(v)?f.filter(x=>x!==v):[...f,v])} />
+                      <span className="text-sm text-slate-600 dark:text-slate-400">{v}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
-            {/* AI 분석 */}
+            {/* AI 분석 섹션 토글 */}
             <div>
-              <h4 className="font-medium text-slate-700 dark:text-slate-300 mb-3">AI 분석</h4>
-              <div className="space-y-2">
-                {['AI 추천 대상','높은 연결성'].map((v) => (
-                  <label key={v} className="flex items-center space-x-2 cursor-pointer">
-                    <input type="checkbox" className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" checked={aiFilter.includes(v)} onChange={()=>setAiFilter(f=>f.includes(v)?f.filter(x=>x!==v):[...f,v])} />
-                    <span className="text-sm text-slate-600 dark:text-slate-400">{v}</span>
-                  </label>
-                ))}
-              </div>
+              <h4
+                className="font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center cursor-pointer select-none"
+                onClick={() => setOpenAI(v => !v)}
+              >
+                AI 분석
+                <span className="ml-2">{openAI ? '▲' : '▼'}</span>
+              </h4>
+              {openAI && (
+                <div className="space-y-2">
+                  {['AI 추천 대상','높은 연결성'].map((v) => (
+                    <label key={v} className="flex items-center space-x-2 cursor-pointer">
+                      <input type="checkbox" className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" checked={aiFilter.includes(v)} onChange={()=>setAiFilter(f=>f.includes(v)?f.filter(x=>x!==v):[...f,v])} />
+                      <span className="text-sm text-slate-600 dark:text-slate-400">{v}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </aside>
-        {/* ========================= 우측 노트 리스트/검색/뷰 전환 ========================= */}
+        {/* 우측: 메인 컨텐츠 (flex-1 min-w-0) */}
         <main className="flex-1 min-w-0">
           {/* 헤더/검색/뷰 전환 */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 space-y-4 sm:space-y-0">
@@ -610,31 +382,22 @@ const Notes = () => {
           <button className="w-full bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-6 mb-6 border border-blue-200/50 dark:border-blue-800/50 hover:from-blue-100 dark:hover:from-blue-900/30 hover:to-indigo-100 dark:hover:to-indigo-900/30 transition-all duration-300 group hover:scale-[1.02] hover:shadow-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                  <TrendingUp className="w-6 h-6 text-white" />
-                </div>
-                <div className="text-left">
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">나의 최근 가치 흐름</h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">지난 7일간 노트 작성 패턴 분석</p>
+                <div className="flex items-center space-x-2">
+                  <span className="text-2xl font-bold text-slate-900 dark:text-white">나의 최근 가치 흐름</span>
                 </div>
               </div>
-              <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-200" />
+              <div className="text-right">
+                <div className="text-2xl font-bold text-slate-900 dark:text-white">지난 7일간 노트 작성 패턴 분석</div>
+              </div>
             </div>
-            <div className="mt-4 flex items-center space-x-6">
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">자기 개발 42%</span>
-                <span className="text-xs font-medium text-green-600 dark:text-green-400">+15%</span>
+            <div className="mt-4 flex items-center justify-between">
+              <div className="flex-1 mr-4">
+                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                  <div className="bg-blue-500 h-2 rounded-full transition-all duration-500 group-hover:bg-blue-400" style={{ width: '40%' }}></div>
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">정보 정리 30%</span>
-                <span className="text-xs font-medium text-red-600 dark:text-red-400">-5%</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">문제 해결 28%</span>
-                <span className="text-xs font-medium text-green-600 dark:text-green-400">+8%</span>
+              <div className="bg-blue-600 group-hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center space-x-2">
+                <span>분석하기</span>
               </div>
             </div>
           </button>
@@ -724,43 +487,120 @@ const Notes = () => {
             />
           </div>
           {/* 노트 카드 리스트 */}
-          <div className={`grid ${view==='grid'?'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6':'space-y-4'}`}>
-            {noteList.filter(note => note.title.includes(search) || note.desc.includes(search) || note.tags.some(t=>t.includes(search))).map(note => (
-              <div
-                key={note.id}
-                className={`bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 hover:shadow-lg transition-all duration-200 cursor-pointer group hover:scale-[1.01] hover:border-blue-300 dark:hover:border-blue-600 ${view==='grid'?'':'flex items-start justify-between'}`}
-                onClick={() => navigate(`/notes/${note.id}`)}
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-3 mb-3">
-                    <span className="text-2xl">{note.emoji}</span>
-                    <h3 className="font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-lg">{note.title}</h3>
-                    <div className={`flex items-center space-x-2 ${note.valueColor} px-2 py-1 rounded-full text-xs font-medium`}>{note.value}</div>
-                    {note.ai && <div className={`flex items-center space-x-1 ${note.aiColor} px-2 py-1 rounded-full text-xs font-medium`}><Brain className="w-3 h-3" /><span>AI 추천</span></div>}
-                    <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${note.reviewColor}`}><Clock className="w-3 h-3" /><span>{note.review}</span></div>
-                  </div>
-                  <p className="text-slate-600 dark:text-slate-400 text-sm mb-4 line-clamp-2 leading-relaxed">{note.desc}</p>
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-2"><Tag className="w-4 h-4 text-slate-400" />
-                      <div className="flex flex-wrap gap-2">
-                        {note.tags.map(tag => <span key={tag} className="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2 py-1 rounded-full">{tag}</span>)}
+          {/* grid 모드: 한 줄에 3개씩, 반응형 지원 */}
+          <div className={`grid ${view==='grid'?'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10':'space-y-6'}`} style={{justifyItems:'center'}}>
+            {notes.length === 0 && !loading && !error && (
+              <div className="col-span-full text-center text-slate-400 py-12">표시할 메모가 없습니다.</div>
+            )}
+            {notes.filter(note => note.title.includes(search) || note.desc.includes(search) || note.tags.some(t=>t.includes(search))).map((note, idx) => {
+              // 랜덤 카드 배경/회전/핀
+              // 색상 팔레트 개선: 더 부드럽고 깔끔한 파스텔톤
+              const BOARD_COLORS = [
+                'bg-gradient-to-br from-yellow-100 via-orange-50 to-pink-100',
+                'bg-gradient-to-br from-blue-100 via-cyan-50 to-green-100',
+                'bg-gradient-to-br from-purple-100 via-pink-50 to-indigo-100',
+                'bg-gradient-to-br from-green-100 via-lime-50 to-emerald-100',
+                'bg-gradient-to-br from-orange-100 via-yellow-50 to-rose-100',
+                'bg-gradient-to-br from-sky-100 via-blue-50 to-indigo-100',
+              ];
+              const color = BOARD_COLORS[idx % BOARD_COLORS.length];
+              const rotate = ["rotate-1", "-rotate-2", "rotate-2", "-rotate-1", "rotate-0"][idx%5];
+              const pin = PIN_ICONS[idx % PIN_ICONS.length];
+              const isLast = idx === notes.length-1;
+              // 리스트형(가로형) 뷰일 때 배경/레이아웃 분기
+              if (view === 'list') {
+                // 관심사 키워드는 태그로만, 본문은 짧은 메모(2줄 ...처리)
+                const shortMemo = note.short_memo || note.desc || '';
+                return (
+                  <div
+                    key={note.id}
+                    ref={isLast ? lastNoteRef : null}
+                    // 가로형 카드: 검색 바와 동일한 w-full, 중앙 정렬
+                    className="relative w-full max-w-none self-center mb-6 bg-[#232a36] rounded-2xl p-6 flex flex-row items-start shadow-lg hover:shadow-2xl border border-slate-700/50 transition-all duration-200 group"
+                    style={{wordBreak:'break-word'}}
+                    onClick={() => navigate(`/notes/${note.id}`)}
+                  >
+                    {/* 좌측: 이모지/타이틀/분류 */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <span className="text-2xl">{note.emoji}</span>
+                        <h3 className="font-bold text-slate-100 text-lg group-hover:text-blue-400 transition-colors truncate max-w-[60%]">{note.title}</h3>
+                        {note.value && <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">{note.value}</span>}
+                      </div>
+                      {/* 본문: 짧은 메모, 2줄 ...처리 */}
+                      <p className="text-slate-300 text-sm mb-4 line-clamp-2 leading-relaxed">{shortMemo}</p>
+                      {/* 관심사 키워드: 하단 태그로만 */}
+                      <div className="flex items-center space-x-2 mb-2">
+                        {note.tags.map(tag => <span key={tag} className="text-xs bg-slate-700 text-slate-200 px-2 py-1 rounded-full">{tag}</span>)}
+                      </div>
+                      {/* 하단: 연결/날짜 등 메타 */}
+                      <div className="flex items-center space-x-4 text-xs text-slate-400">
+                        <div className="flex items-center space-x-1"><Link2 className="w-3 h-3" /><span>{note.connections}개 연결</span></div>
+                        <span>{note.time}</span>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-4 text-xs text-slate-500 dark:text-slate-400">
-                      <div className="flex items-center space-x-1"><Link2 className="w-3 h-3" /><span>{note.connections}개 연결</span></div>
-                      <span>{note.time}</span>
+                    {/* 우측: 별점/진행도 */}
+                    <div className="flex flex-col items-center justify-center ml-6 min-w-[70px]">
+                      <div className="flex items-center space-x-1 mb-1">
+                        {[1,2,3,4,5].map(i => (
+                          <span key={i} className={`w-4 h-4 ${i <= note.stars ? 'text-yellow-400' : 'text-slate-600'}`}>★</span>
+                        ))}
+                      </div>
+                      <span className="text-xs text-slate-300 font-medium mb-1">{note.stars}/5</span>
+                      <div className="w-12 h-2 bg-slate-700 rounded-full overflow-hidden">
+                        <div className={`h-full transition-all duration-300 ${note.review === '기억 선명' ? 'bg-green-500' : note.review === '복습 권장' ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${note.progress || 0}%` }}></div>
+                      </div>
                     </div>
                   </div>
+                );
+              }
+              // grid형(포스트잇) 뷰는 기존대로, 색상/태그 스타일 개선
+              return (
+                <div
+                  key={note.id}
+                  ref={isLast ? lastNoteRef : null}
+                  className={`relative ${color} ${rotate} shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer group rounded-xl w-[260px] min-h-[260px] flex flex-col items-center p-5 pt-10 border-2 border-amber-100 hover:border-orange-300`}
+                  style={{
+                    wordBreak:'break-word',
+                    backgroundImage: "url('/pin_note.png')",
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat'
+                  }}
+                  onClick={() => navigate(`/notes/${note.id}`)}
+                >
+                  {/* 집게/핀 아이콘 */}
+                  <div className="absolute -top-5 left-1/2 -translate-x-1/2 z-20">{pin}</div>
+                  {/* 분류 뱃지: 왼쪽 상단 고정 */}
+                  <div className="absolute top-3 left-4 z-10">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-pink-400 to-orange-400 text-white text-xs font-bold shadow-sm whitespace-nowrap">
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      {note.value || '분류 없음'}
+                    </span>
+                  </div>
+                  {/* 날짜 강조 뱃지 */}
+                  <div className="absolute top-3 right-4 z-10">
+                    <span className="bg-gradient-to-r from-blue-400 to-purple-400 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md border border-white/30 whitespace-nowrap">{note.time}</span>
+                  </div>
+                  {/* 카드 본문 */}
+                  <div className="flex items-center space-x-3 mb-3 min-w-0 mt-2">
+                    <span className="text-3xl drop-shadow-lg shrink-0">{note.emoji}</span>
+                    <h3 className="font-extrabold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-lg tracking-tight truncate max-w-[60%]">{note.title}</h3>
+                  </div>
+                  {/* 본문 내용을 더 많이 보여줌 (최대 6줄) */}
+                  <p className="text-slate-700 dark:text-slate-300 text-base mb-5 line-clamp-6 leading-relaxed font-medium break-words max-h-36 overflow-hidden">{note.desc}</p>
+                  {/* 아래 여백을 flex-grow로 채우고, 메타 정보를 항상 하단에 고정 */}
+                  <div className="flex-1 w-full" />
+                  {/* 하단: 연결/날짜 등 메타 - 항상 카드 맨 아래 고정 */}
+                  <div className="flex items-center space-x-4 text-xs text-slate-500 dark:text-slate-400 mt-2 flex-wrap w-full justify-start">
+                    <div className="flex items-center space-x-1"><Link2 className="w-3 h-3" /><span>{note.connections}개 연결</span></div>
+                  </div>
                 </div>
-                {/* 별점/진행도 */}
-                <div className="flex flex-col items-center space-y-2 ml-6">
-                  {renderStars(note.stars)}
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{note.stars}/5</span>
-                  {renderProgress(note.progress, note.reviewColor)}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
+          {loading && <div className="text-center text-slate-500 py-8">불러오는 중...</div>}
+          {!hasMore && !error && <div className="text-center text-slate-400 py-8">모든 메모를 불러왔습니다.</div>}
         </main>
       </div>
     </div>
