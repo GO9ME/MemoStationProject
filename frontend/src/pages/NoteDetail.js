@@ -1,11 +1,40 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Share2, Bookmark, Calendar, Link2, Users, Tag, Brain, ChevronUp, Star, PenLine, Copy, Plus, Search, Heart, Compass, ChevronDown, BarChart3, Zap, Target, BookOpen, Lightbulb, Eye, CheckCircle
 } from 'lucide-react';
 
 const NoteDetail = () => {
+  const { noteId } = useParams();
   const navigate = useNavigate();
+  const [note, setNote] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchNoteDetail = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await fetch(`/api/memos/${noteId}`);
+        if (!response.ok) throw new Error('노트 정보를 불러오지 못했습니다.');
+        const data = await response.json();
+        setNote(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchNoteDetail();
+  }, [noteId]);
+
+  if (loading) return <div className="p-8 text-center">로딩 중...</div>;
+  if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
+  if (!note) return <div className="p-8 text-center">노트 정보가 없습니다.</div>;
+
+  const { title, content, summary, keywords, created_at, category } = note;
+  const keywordList = typeof keywords === 'string' ? keywords.split(',').map(k => k.trim()) : (keywords || []);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
@@ -25,7 +54,7 @@ const NoteDetail = () => {
               </button>
               <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-full text-sm font-medium flex items-center space-x-2">
                 <span>🤔</span>
-                <span>자기 개발</span>
+                <span>{category || '카테고리'}</span>
               </div>
             </div>
           </div>
@@ -39,24 +68,24 @@ const NoteDetail = () => {
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-4">
                     <span className="text-3xl">🤔</span>
-                    <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-full text-sm font-medium">자기 개발</div>
+                    <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-full text-sm font-medium">{category || '카테고리'}</div>
                   </div>
-                  <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-4 leading-tight">창의성에 대한 고민</h1>
+                  <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-4 leading-tight">{title}</h1>
                   <div className="flex items-center space-x-6 text-sm text-slate-600 dark:text-slate-400 mb-6">
-                    <div className="flex items-center space-x-2"><Calendar className="w-4 h-4" /><span>12일 전</span></div>
+                    <div className="flex items-center space-x-2"><Calendar className="w-4 h-4" /><span>{created_at ? new Date(created_at).toLocaleDateString() : ''}</span></div>
                     <div className="flex items-center space-x-2"><Link2 className="w-4 h-4" /><span>3개 연결</span></div>
                     <div className="flex items-center space-x-2"><Users className="w-4 h-4" /><span>3개 관련 노트</span></div>
                   </div>
                   <div className="flex flex-wrap gap-2 mb-6">
-                    <span className="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1"><Tag className="w-3 h-3" /><span>#태그1</span></span>
-                    <span className="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1"><Tag className="w-3 h-3" /><span>#태그2</span></span>
+                    {keywordList.map((kw, idx) => (
+                      <span key={idx} className="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-3 py-1 rounded-full text-sm font-medium flex items-center space-x-1"><Tag className="w-3 h-3" /><span>#{kw}</span></span>
+                    ))}
                   </div>
                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-6 border border-blue-100/50 dark:border-blue-800/30">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center space-x-2"><Brain className="w-5 h-5 text-blue-600 dark:text-blue-400" /><span className="text-sm font-bold text-blue-900 dark:text-blue-300 uppercase tracking-wide">AI 요약</span></div>
-                      <button className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"><ChevronUp className="w-4 h-4" /></button>
                     </div>
-                    <p className="text-slate-700 dark:text-slate-300 leading-relaxed">이 노트는 디자인 시스템의 일관성과 창의성 균형에 대한 깊이 있는 사고를 담고 있습니다. 특히 사용자 경험의 예측 가능성과 혁신 사이의 적절한 지점을 찾으려는 고민이 잘 드러나 있어, 향후 실무 적용 시 중요한 참고 자료가 될 것입니다.</p>
+                    <p className="text-slate-700 dark:text-slate-300 leading-relaxed">{summary}</p>
                   </div>
                 </div>
                 <div className="ml-8 text-center">
@@ -102,9 +131,7 @@ const NoteDetail = () => {
               </div>
               <div className="prose prose-lg dark:prose-invert max-w-none">
                 <div className="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap cursor-text">
-                  창의적인 아이디어가 나오지 않을 때의 답답함과 그것을 극복하는 방법에 대해...
-                  <br /><br />
-                  이것은 노트의 전체 내용입니다. 실제로는 사용자가 작성한 전체 텍스트가 여기에 표시됩니다.
+                  {content}
                 </div>
               </div>
             </div>
