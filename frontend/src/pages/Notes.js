@@ -141,6 +141,7 @@ const Notes = () => {
   useEffect(() => {
     setLoading(true);
     setError(null);
+    setNotes([]); // notes 상태 초기화
     fetch(MEMOS_API)
       .then(res => res.json())
       .then(data => {
@@ -168,7 +169,7 @@ const Notes = () => {
             pain_points: row.pain_points,
             persona_profession: row.persona_profession,
           }));
-          setNotes(mapped);
+          setNotes(mapped); // 새로 할당
         } else {
           setNotes([]);
         }
