@@ -145,7 +145,30 @@ const Notes = () => {
       .then(res => res.json())
       .then(data => {
         if (data.memos) {
-          setNotes(data.memos);
+          // DB에서 받아온 메모를 카드형 UI에 맞게 변환
+          const mapped = data.memos.map((row, idx) => ({
+            id: row.id,
+            emoji: '📝',
+            title: row.summary || row.date || '(제목 없음)', // 요약이 있으면 제목으로, 없으면 날짜
+            desc: row.content ? row.content.slice(0, 120) : '', // 본문 일부
+            value: row.style || '',
+            valueColor: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
+            ai: false,
+            aiColor: '',
+            review: '',
+            reviewColor: '',
+            tags: row.keywords ? row.keywords.split(',').map(t=>t.trim()).filter(Boolean) : [],
+            connections: 0,
+            time: row.date || '',
+            stars: 0,
+            progress: 0,
+            // 상세 페이지에서 전체 content, interests 등 활용 가능
+            fullContent: row.content,
+            interests: row.interests,
+            pain_points: row.pain_points,
+            persona_profession: row.persona_profession,
+          }));
+          setNotes(mapped);
         } else {
           setNotes([]);
         }
