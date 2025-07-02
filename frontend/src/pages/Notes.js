@@ -570,11 +570,14 @@ const Notes = () => {
                         <h3 className="font-bold text-slate-100 text-lg group-hover:text-blue-400 transition-colors truncate max-w-[60%]">{note.title}</h3>
                         {note.value && <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">{note.value}</span>}
                       </div>
-                      {/* 본문: 짧은 메모, 2줄 ...처리 */}
-                      <p className="text-slate-300 text-sm mb-4 line-clamp-2 leading-relaxed">{shortMemo}</p>
+                      {/* 본문: summary(요약) 내용 표시 */}
+                      <p className="text-slate-300 text-sm mb-4 line-clamp-2 leading-relaxed">{note.desc}</p>
                       {/* 관심사 키워드: 하단 태그로만 */}
                       <div className="flex items-center space-x-2 mb-2">
-                        {note.tags.map(tag => <span key={tag} className="text-xs bg-slate-700 text-slate-200 px-2 py-1 rounded-full">{tag}</span>)}
+                        {/* keywords(키워드) 값이 있을 때, 쉼표로 분리하여 각각 태그로 렌더링 */}
+                        {note.tags.map(tag => (
+                          <span key={tag} className="text-xs bg-slate-700 text-slate-200 px-2 py-1 rounded-full">{tag}</span>
+                        ))}
                       </div>
                       {/* 하단: 연결/날짜 등 메타 */}
                       <div className="flex items-center space-x-4 text-xs text-slate-400">
