@@ -5,62 +5,62 @@ import {
 import { useNavigate } from 'react-router-dom';
 
 // ========================= 예시 데이터 =========================
-const noteList = [
-  {
-    id: 1,
-    emoji: '🤔',
-    title: 'Design System Thoughts',
-    desc: '현대적 디자인 시스템에서 일관성과 창의성의 균형을 추천하며, 사용자 경험의 예측 가능성과 혁신 사이의 적절한 지점을 찾아보았다...',
-    value: '자기 개발',
-    valueColor: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
-    ai: true,
-    aiColor: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300',
-    review: '기억 선명',
-    reviewColor: 'text-green-500 bg-green-100 dark:bg-green-900/30',
-    tags: ['#디자인', '#시스템', '#UX'],
-    connections: 5,
-    time: '2시간 전',
-    stars: 4,
-    progress: 15,
-  },
-  {
-    id: 2,
-    emoji: '💭',
-    title: 'AI 윤리 토론',
-    desc: 'AI 추천 시스템에서 투명성과 사용자 신뢰에 대한 중요한 고려사항들을 정리하며, 알고리즘의 편향성 문제와 해결 방안을 모색했다...',
-    value: '문제 해결',
-    valueColor: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
-    ai: false,
-    aiColor: '',
-    review: '복습 권장',
-    reviewColor: 'text-yellow-500 bg-yellow-100 dark:bg-yellow-900/30',
-    tags: ['#AI', '#윤리', '#기술'],
-    connections: 8,
-    time: '1일 전',
-    stars: 5,
-    progress: 45,
-  },
-  {
-    id: 3,
-    emoji: '🌱',
-    title: '주말 성찰',
-    desc: '일과 삶의 균형과 창작적 휴식 시간의 중요성에 대해 생각해보며, 지속 가능한 창작 루틴을 만들어가는 과정을 기록했다...',
-    value: '정보 정리',
-    valueColor: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
-    ai: true,
-    aiColor: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300',
-    review: '복습 필요',
-    reviewColor: 'text-red-500 bg-red-100 dark:bg-red-900/30',
-    tags: ['#개인', '#성찰', '#균형'],
-    connections: 3,
-    time: '3일 전',
-    stars: 3,
-    progress: 75,
-  },
-];
+// const noteList = [
+//   {
+//     id: 1,
+//     emoji: '🤔',
+//     title: 'Design System Thoughts',
+//     desc: '현대적 디자인 시스템에서 일관성과 창의성의 균형을 추천하며, 사용자 경험의 예측 가능성과 혁신 사이의 적절한 지점을 찾아보았다...',
+//     value: '자기 개발',
+//     valueColor: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
+//     ai: true,
+//     aiColor: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300',
+//     review: '기억 선명',
+//     reviewColor: 'text-green-500 bg-green-100 dark:bg-green-900/30',
+//     tags: ['#디자인', '#시스템', '#UX'],
+//     connections: 5,
+//     time: '2시간 전',
+//     stars: 4,
+//     progress: 15,
+//   },
+//   {
+//     id: 2,
+//     emoji: '💭',
+//     title: 'AI 윤리 토론',
+//     desc: 'AI 추천 시스템에서 투명성과 사용자 신뢰에 대한 중요한 고려사항들을 정리하며, 알고리즘의 편향성 문제와 해결 방안을 모색했다...',
+//     value: '문제 해결',
+//     valueColor: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
+//     ai: false,
+//     aiColor: '',
+//     review: '복습 권장',
+//     reviewColor: 'text-yellow-500 bg-yellow-100 dark:bg-yellow-900/30',
+//     tags: ['#AI', '#윤리', '#기술'],
+//     connections: 8,
+//     time: '1일 전',
+//     stars: 5,
+//     progress: 45,
+//   },
+//   {
+//     id: 3,
+//     emoji: '��',
+//     title: '주말 성찰',
+//     desc: '일과 삶의 균형과 창작적 휴식 시간의 중요성에 대해 생각해보며, 지속 가능한 창작 루틴을 만들어가는 과정을 기록했다...',
+//     value: '정보 정리',
+//     valueColor: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
+//     ai: true,
+//     aiColor: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300',
+//     review: '복습 필요',
+//     reviewColor: 'text-red-500 bg-red-100 dark:bg-red-900/30',
+//     tags: ['#개인', '#성찰', '#균형'],
+//     connections: 3,
+//     time: '3일 전',
+//     stars: 3,
+//     progress: 75,
+//   },
+// ];
 
-const MEMO_NOTES_API = 'http://localhost:8000/api/memo-notes';
-
+// const MEMO_NOTES_API = 'http://localhost:8000/api/memo-notes';
+const MEMOS_API = 'http://localhost:8000/api/memos';
 const PAGE_SIZE = 5; // 무한스크롤 기준 5개씩
 const BOARD_COLORS = [
   'bg-yellow-50', 'bg-orange-50', 'bg-amber-50', 'bg-lime-50', 'bg-rose-50', 'bg-sky-50', 'bg-violet-50', 'bg-pink-50'
@@ -137,12 +137,32 @@ const Notes = () => {
 
   const navigate = useNavigate();
 
+  // DB에서 메모 불러오기
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    fetch(MEMOS_API)
+      .then(res => res.json())
+      .then(data => {
+        if (data.memos) {
+          setNotes(data.memos);
+        } else {
+          setNotes([]);
+        }
+        setLoading(false);
+      })
+      .catch(err => {
+        setError('메모 데이터를 불러올 수 없습니다.');
+        setLoading(false);
+      });
+  }, []);
+
   // 카드 누적 로딩
   const fetchMoreNotes = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${MEMO_NOTES_API}?page=${page}&size=${PAGE_SIZE}`);
+      const res = await fetch(`${MEMOS_API}?page=${page}&size=${PAGE_SIZE}`);
       if (!res.ok) throw new Error('메모 데이터를 불러올 수 없습니다.');
       const data = await res.json();
       const parsed = data.notes.map((row, idx) => ({

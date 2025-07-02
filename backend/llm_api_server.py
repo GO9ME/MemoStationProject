@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import json
 import csv
 import pandas as pd
+import sqlite3
 
 # .env 파일 로드
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
@@ -27,6 +28,8 @@ NOTION_DATABASE_ID = os.getenv("NOTION_DATABASE_ID")
 
 DATA_PATH = os.path.join(os.path.dirname(__file__), 'data', 'notion', 'notion_notes.json')
 MEMO_CSV_PATH = os.path.join(os.path.dirname(__file__), 'data', 'memo', 'generated_memos (2).csv')
+
+DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'memos.db')
 
 @app.post("/api/notion")
 def get_notion_pages():
@@ -79,6 +82,25 @@ def get_memo_notes(page: int = Query(1, ge=1), size: int = Query(30, ge=1, le=10
         return {"total": total, "notes": notes}
     except Exception as e:
         return {"total": 0, "notes": []}
+
+@app.get("/api/memos")
+def get_memos():
+    """
+    SQLite DB에서 memos 테이블의 모든 메모를 최신순으로 반환합니다.
+    """
+    if not os.path.exists(DB_PATH):
+        return {"total": 0, "memos": []}
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row  # dict 형태로 반환
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM memos ORDER BY date DESC")
+        rows = cursor.fetchall()
+        memos = [dict(row) for row in rows]
+        conn.close()
+        return {"total": len(memos), "memos": memos}
+    except Exception as e:
+        return {"total": 0, "memos": [], "error": str(e)}
 
 # 추후 LLM 연동 엔드포인트도 이 서버에 추가하면 됩니다.
 
