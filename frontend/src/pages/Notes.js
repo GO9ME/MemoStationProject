@@ -150,8 +150,8 @@ const Notes = () => {
           const mapped = data.memos.map((row, idx) => ({
             id: row.id,
             emoji: '📝',
-            title: row.summary || row.date || '(제목 없음)', // 요약이 있으면 제목으로, 없으면 날짜
-            desc: row.content ? row.content.slice(0, 120) : '', // 본문 일부
+            title: row.date || '(제목 없음)', // 날짜를 제목으로 사용
+            desc: row.summary ? row.summary.slice(0, 80) : '', // 요약을 본문으로, 80자 제한
             value: row.style || '',
             valueColor: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
             ai: false,
@@ -163,8 +163,8 @@ const Notes = () => {
             time: row.date || '',
             stars: 0,
             progress: 0,
-            // 상세 페이지에서 전체 content, interests 등 활용 가능
-            fullContent: row.content,
+            // 상세 페이지에서 전체 summary, interests 등 활용 가능
+            fullContent: row.summary,
             interests: row.interests,
             pain_points: row.pain_points,
             persona_profession: row.persona_profession,
@@ -559,7 +559,6 @@ const Notes = () => {
                   <div
                     key={note.id}
                     ref={isLast ? lastNoteRef : null}
-                    // 가로형 카드: 검색 바와 동일한 w-full, 중앙 정렬
                     className="relative w-full max-w-none self-center mb-6 bg-[#232a36] rounded-2xl p-6 flex flex-row items-start shadow-lg hover:shadow-2xl border border-slate-700/50 transition-all duration-200 group"
                     style={{wordBreak:'break-word'}}
                     onClick={() => navigate(`/notes/${note.id}`)}
@@ -626,7 +625,7 @@ const Notes = () => {
                   <div className="absolute top-3 right-4 z-10">
                     <span className="bg-gradient-to-r from-blue-400 to-purple-400 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md border border-white/30 whitespace-nowrap">{note.time}</span>
                   </div>
-                  {/* 카드 본문 */}
+                  {/* grid 뷰에서만 이 부분 렌더링 */}
                   <div className="flex items-center space-x-3 mb-3 min-w-0 mt-2">
                     <span className="text-3xl drop-shadow-lg shrink-0">{note.emoji}</span>
                     <h3 className="font-extrabold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-lg tracking-tight truncate max-w-[60%]">{note.title}</h3>
