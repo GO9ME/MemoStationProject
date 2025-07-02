@@ -60,7 +60,7 @@ import { useNavigate } from 'react-router-dom';
 // ];
 
 // const MEMO_NOTES_API = 'http://localhost:8000/api/memo-notes';
-const MEMOS_API = 'http://localhost:8000/api/memos';
+const MEMOS_API = 'http://15.164.213.252:8000/api/memos';
 const PAGE_SIZE = 5; // 무한스크롤 기준 5개씩
 const BOARD_COLORS = [
   'bg-yellow-50', 'bg-orange-50', 'bg-amber-50', 'bg-lime-50', 'bg-rose-50', 'bg-sky-50', 'bg-violet-50', 'bg-pink-50'
