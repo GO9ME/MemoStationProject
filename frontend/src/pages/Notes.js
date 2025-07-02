@@ -61,7 +61,7 @@ import { useNavigate } from 'react-router-dom';
 
 // const MEMO_NOTES_API = 'http://localhost:8000/api/memo-notes';
 const MEMOS_API = 'http://15.164.213.252:8000/api/memos';
-const PAGE_SIZE = 4; // 무한스크롤 기준 4개씩
+const PAGE_SIZE = 8; // 무한스크롤 기준 8개씩
 const BOARD_COLORS = [
   'bg-yellow-50', 'bg-orange-50', 'bg-amber-50', 'bg-lime-50', 'bg-rose-50', 'bg-sky-50', 'bg-violet-50', 'bg-pink-50'
 ];
@@ -141,7 +141,8 @@ const Notes = () => {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    setNotes([]); // notes 상태 초기화
+    // page가 1일 때만 notes 상태 초기화
+    if (page === 1) setNotes([]);
     fetch(`${MEMOS_API}?page=1&size=${PAGE_SIZE}`)
       .then(res => res.json())
       .then(data => {
@@ -177,10 +178,13 @@ const Notes = () => {
         setError('메모 데이터를 불러올 수 없습니다.');
         setLoading(false);
       });
+  // eslint-disable-next-line
   }, []);
 
   // 카드 누적 로딩 (무한스크롤)
   const fetchMoreNotes = useCallback(async () => {
+    // 이미 로딩 중이면 중복 호출 방지
+    if (loading) return;
     setLoading(true);
     setError(null);
     try {
@@ -215,15 +219,9 @@ const Notes = () => {
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [page, loading]);
 
-  // 최초/페이지 변경 시 데이터 fetch
-  useEffect(() => {
-    fetchMoreNotes();
-    // eslint-disable-next-line
-  }, [page]);
-
-  // 무한스크롤 IntersectionObserver
+  // 무한스크롤 IntersectionObserver (threshold 0.7)
   const lastNoteRef = useCallback(node => {
     if (loading) return;
     if (observer.current) observer.current.disconnect();
@@ -231,7 +229,7 @@ const Notes = () => {
       if (entries[0].isIntersecting && hasMore) {
         setPage(prev => prev + 1);
       }
-    });
+    }, { threshold: 0.7 }); // 마지막 카드가 70% 이상 보일 때만 트리거
     if (node) observer.current.observe(node);
   }, [loading, hasMore]);
 
