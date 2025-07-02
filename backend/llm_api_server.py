@@ -84,9 +84,11 @@ def get_memo_notes(page: int = Query(1, ge=1), size: int = Query(30, ge=1, le=10
         return {"total": 0, "notes": []}
 
 @app.get("/api/memos")
-def get_memos():
+def get_memos(page: int = Query(1, ge=1), size: int = Query(4, ge=1, le=100)):
     """
-    SQLite DB에서 memos 테이블의 모든 메모를 최신순으로 반환합니다.
+    SQLite DB에서 memos 테이블의 메모를 페이지네이션하여 반환합니다.
+    page: 1부터 시작, size: 1~100 (기본 4)
+    최신순 정렬, 전체 개수(total)도 함께 반환
     """
     if not os.path.exists(DB_PATH):
         return {"total": 0, "memos": []}
@@ -94,11 +96,16 @@ def get_memos():
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row  # dict 형태로 반환
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM memos ORDER BY date DESC")
+        # 전체 개수 구하기
+        cursor.execute("SELECT COUNT(*) FROM memos")
+        total = cursor.fetchone()[0]
+        # 페이지네이션 쿼리
+        offset = (page - 1) * size
+        cursor.execute("SELECT * FROM memos ORDER BY date DESC LIMIT ? OFFSET ?", (size, offset))
         rows = cursor.fetchall()
         memos = [dict(row) for row in rows]
         conn.close()
-        return {"total": len(memos), "memos": memos}
+        return {"total": total, "memos": memos}
     except Exception as e:
         return {"total": 0, "memos": [], "error": str(e)}
 

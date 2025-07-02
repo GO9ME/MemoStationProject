@@ -61,7 +61,7 @@ import { useNavigate } from 'react-router-dom';
 
 // const MEMO_NOTES_API = 'http://localhost:8000/api/memo-notes';
 const MEMOS_API = 'http://15.164.213.252:8000/api/memos';
-const PAGE_SIZE = 5; // 무한스크롤 기준 5개씩
+const PAGE_SIZE = 4; // 무한스크롤 기준 4개씩
 const BOARD_COLORS = [
   'bg-yellow-50', 'bg-orange-50', 'bg-amber-50', 'bg-lime-50', 'bg-rose-50', 'bg-sky-50', 'bg-violet-50', 'bg-pink-50'
 ];
@@ -137,21 +137,20 @@ const Notes = () => {
 
   const navigate = useNavigate();
 
-  // DB에서 메모 불러오기
+  // DB에서 메모 불러오기 (최초 1페이지만)
   useEffect(() => {
     setLoading(true);
     setError(null);
     setNotes([]); // notes 상태 초기화
-    fetch(MEMOS_API)
+    fetch(`${MEMOS_API}?page=1&size=${PAGE_SIZE}`)
       .then(res => res.json())
       .then(data => {
         if (data.memos) {
-          // DB에서 받아온 메모를 카드형 UI에 맞게 변환
           const mapped = data.memos.map((row, idx) => ({
             id: row.id,
             emoji: '📝',
-            title: row.date || '(제목 없음)', // 날짜를 제목으로 사용
-            desc: row.summary ? row.summary.slice(0, 80) : '', // 요약을 본문으로, 80자 제한
+            title: row.date || '(제목 없음)',
+            desc: row.summary ? row.summary.slice(0, 80) : '',
             value: row.style || '',
             valueColor: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
             ai: false,
@@ -163,13 +162,12 @@ const Notes = () => {
             time: row.date || '',
             stars: 0,
             progress: 0,
-            // 상세 페이지에서 전체 summary, interests 등 활용 가능
             fullContent: row.summary,
             interests: row.interests,
             pain_points: row.pain_points,
             persona_profession: row.persona_profession,
           }));
-          setNotes(mapped); // 새로 할당
+          setNotes(mapped);
         } else {
           setNotes([]);
         }
@@ -181,7 +179,7 @@ const Notes = () => {
       });
   }, []);
 
-  // 카드 누적 로딩
+  // 카드 누적 로딩 (무한스크롤)
   const fetchMoreNotes = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -189,22 +187,26 @@ const Notes = () => {
       const res = await fetch(`${MEMOS_API}?page=${page}&size=${PAGE_SIZE}`);
       if (!res.ok) throw new Error('메모 데이터를 불러올 수 없습니다.');
       const data = await res.json();
-      const parsed = data.notes.map((row, idx) => ({
-        id: (page-1)*PAGE_SIZE + idx + 1,
+      const parsed = data.memos.map((row, idx) => ({
+        id: row.id,
         emoji: '📝',
         title: row.date || '(제목 없음)',
-        desc: row.content ? row.content.slice(0, 100) : '',
+        desc: row.summary ? row.summary.slice(0, 80) : '',
         value: row.style || '',
         valueColor: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
         ai: false,
         aiColor: '',
         review: '',
         reviewColor: '',
-        tags: row.interests ? row.interests.split(',').map(t=>t.trim()).filter(Boolean) : [],
+        tags: row.keywords ? row.keywords.split(',').map(t=>t.trim()).filter(Boolean) : [],
         connections: 0,
         time: row.date || '',
         stars: 0,
         progress: 0,
+        fullContent: row.summary,
+        interests: row.interests,
+        pain_points: row.pain_points,
+        persona_profession: row.persona_profession,
       }));
       setNotes(prev => [...prev, ...parsed]);
       setHasMore((page * PAGE_SIZE) < data.total);
