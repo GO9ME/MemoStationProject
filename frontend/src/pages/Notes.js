@@ -213,7 +213,7 @@ const Notes = () => {
         persona_profession: row.persona_profession,
       }));
       setNotes(prev => [...prev, ...parsed]);
-      setHasMore((page * PAGE_SIZE) < data.total);
+      setHasMore(data.has_more);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -232,6 +232,12 @@ const Notes = () => {
     }, { threshold: 0.7 }); // 마지막 카드가 70% 이상 보일 때만 트리거
     if (node) observer.current.observe(node);
   }, [loading, hasMore]);
+
+  // page가 변경될 때마다 fetchMoreNotes 실행 (무한스크롤 정상 동작)
+  useEffect(() => {
+    fetchMoreNotes();
+    // eslint-disable-next-line
+  }, [page]);
 
   // 별점 렌더링 함수
   const renderStars = (count) => (
