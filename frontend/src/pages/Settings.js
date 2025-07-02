@@ -20,8 +20,38 @@ import {
 // 향후 상태 관리를 위해 prop으로 데이터를 받을 수 있도록 컴포넌트 분리
 // 예시: const PlanSummary = ({ planName, planDescription }) => ( ... );
 
+// const NOTION_TOKEN = process.env.REACT_APP_NOTION_TOKEN;
+// const NOTION_DATABASE_ID = process.env.REACT_APP_NOTION_DATABASE_ID;
+
+const NOTION_PROXY_URL = 'http://localhost:8000/api/notion';
+
+// Notion 페이지에서 제목 속성을 자동으로 추출하는 함수
+function getNotionPageTitle(page) {
+  if (!page.properties) return "(제목 없음)";
+  const titleProp = Object.values(page.properties).find(
+    prop => prop.type === "title"
+  );
+  if (
+    titleProp &&
+    titleProp.title &&
+    titleProp.title.length > 0 &&
+    titleProp.title[0].plain_text
+  ) {
+    return titleProp.title[0].plain_text;
+  }
+  return "(제목 없음)";
+}
+
 const Settings = () => {
   const [showFloatingButtons, setShowFloatingButtons] = useState(true);
+  // 프리미엄 구독 팝업 상태
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  // 노션 메모 목록 상태
+  const [notionPages, setNotionPages] = useState([]);
+  const [notionLoading, setNotionLoading] = useState(false);
+  const [notionError, setNotionError] = useState(null);
+  // 노션 메모 저장 상태
+  const [saveMessage, setSaveMessage] = useState("");
 
   // Google 로그인 훅 초기화
   const handleGoogleLogin = useGoogleLogin({
@@ -36,6 +66,48 @@ const Settings = () => {
     },
     // scope: 'https://www.googleapis.com/auth/drive.readonly', // 필요한 scope 추가 가능
   });
+
+  // Notion에서 메모(페이지) 목록 가져오기 (프록시 서버 사용)
+  const fetchNotionPages = async () => {
+    setNotionLoading(true);
+    setNotionError(null);
+    try {
+      const res = await fetch(NOTION_PROXY_URL, {
+        method: "POST"
+      });
+      const data = await res.json();
+      if (data.results) {
+        setNotionPages(data.results);
+      } else {
+        setNotionPages([]);
+        setNotionError(data.message || "데이터를 불러올 수 없습니다.");
+      }
+    } catch (err) {
+      setNotionError("노션 API 오류: " + err.message);
+    } finally {
+      setNotionLoading(false);
+    }
+  };
+
+  // 노션 메모를 백엔드에 저장하는 함수
+  const saveNotionPages = async () => {
+    setSaveMessage("");
+    try {
+      const res = await fetch('http://localhost:8000/api/notion-save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(notionPages)
+      });
+      const result = await res.json();
+      if (result.success) {
+        setSaveMessage("노션 메모가 성공적으로 저장되었습니다.");
+      } else {
+        setSaveMessage("저장 실패: " + (result.error || "알 수 없는 오류"));
+      }
+    } catch (err) {
+      setSaveMessage("저장 중 오류 발생: " + err.message);
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
@@ -57,10 +129,6 @@ const Settings = () => {
               <div className="text-sm text-slate-400">무료로 기본 기능을 이용 중입니다</div>
             </div>
           </div>
-          <button className="flex items-center space-x-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300">
-            <Crown className="w-5 h-5 mr-1" />
-            <span>지금 업그레이드</span>
-          </button>
         </div>
         {/* 프리미엄 업그레이드 카드 */}
         <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 rounded-2xl p-8 text-white relative overflow-hidden mb-2">
@@ -80,7 +148,10 @@ const Settings = () => {
               <div className="text-2xl font-bold">₩9,900</div>
               <div className="text-sm text-purple-100">월 구독</div>
             </div>
-            <button className="flex items-center space-x-2 bg-gradient-to-r from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300">
+            <button
+              className="flex items-center space-x-2 bg-gradient-to-r from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300"
+              onClick={() => setShowPremiumModal(true)}
+            >
               <Sparkles className="w-5 h-5 mr-1" />
               <span>지금 업그레이드</span>
             </button>
@@ -103,6 +174,12 @@ const Settings = () => {
                 <div>
                   <div className="flex items-center space-x-2 mb-1">
                     <span className="font-medium text-slate-100">Notion</span>
+                    {/* 연동 성공 시 연결됨 표시 */}
+                    {notionPages.length > 0 && !notionError ? (
+                      <span className="flex items-center text-green-400 font-semibold ml-2">
+                        <CheckCircle className="w-5 h-5 mr-1" />연결됨
+                      </span>
+                    ) : null}
                   </div>
                   <p className="text-sm text-slate-400">노션 페이지와 데이터베이스에서 메모를 가져옵니다.</p>
                   <div className="flex items-center space-x-2 mt-2">
@@ -111,7 +188,42 @@ const Settings = () => {
                   </div>
                 </div>
               </div>
-              <button className="px-4 py-2 rounded-xl font-medium transition-colors bg-blue-600 hover:bg-blue-700 text-white" onClick={handleGoogleLogin}>연결하기</button>
+              {/* 연동 안 됐을 때만 연결하기 버튼 */}
+              {notionPages.length === 0 || notionError ? (
+                <button
+                  className="px-4 py-2 rounded-xl font-medium transition-colors bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={fetchNotionPages}
+                >
+                  연결하기
+                </button>
+              ) : null}
+            </div>
+            {/* 노션 메모 목록 출력 */}
+            <div className="bg-slate-900/60 dark:bg-slate-800 rounded-2xl p-6 border border-slate-700/50 mt-2">
+              <h3 className="text-lg font-bold text-slate-100 mb-3">노션 메모 목록</h3>
+              {notionLoading && <div className="text-blue-400">불러오는 중...</div>}
+              {notionError && <div className="text-red-400">{notionError}</div>}
+              {!notionLoading && !notionError && notionPages.length === 0 && (
+                <div className="text-slate-400">아직 불러온 메모가 없습니다.</div>
+              )}
+              <ul className="space-y-2 mt-2">
+                {notionPages.map(page => (
+                  <li key={page.id} className="p-3 bg-slate-800 rounded-xl border border-slate-700/50 text-slate-100">
+                    {getNotionPageTitle(page)}
+                  </li>
+                ))}
+              </ul>
+              {/* 노션 메모 목록 출력 아래에 저장 버튼 및 메시지 */}
+              <div className="flex items-center space-x-3 mt-4">
+                <button
+                  className="px-4 py-2 rounded-xl font-medium transition-colors bg-green-600 hover:bg-green-700 text-white"
+                  onClick={saveNotionPages}
+                  disabled={notionPages.length === 0}
+                >
+                  노션 메모 저장하기
+                </button>
+                {saveMessage && <span className="text-sm text-green-400">{saveMessage}</span>}
+              </div>
             </div>
             {/* Obsidian */}
             <div className="flex items-center justify-between p-4 bg-slate-800 rounded-xl border border-slate-700/50 hover:border-blue-400 transition-all duration-200 group">
@@ -271,47 +383,48 @@ const Settings = () => {
           </div>
         </div>
       </div>
-      {/* 오른쪽 하단 플로팅 버튼 그룹 (2열 구조, 이미지와 동일하게) */}
-      {showFloatingButtons ? (
-        <div className="fixed bottom-8 right-8 z-50 flex flex-col items-end space-y-3">
-          {/* 새로운 노트 작성 */}
-          <div className="flex items-center space-x-3">
-            <button className="bg-[#232b36] text-white/80 font-medium px-5 py-3 rounded-2xl shadow text-sm">새로운 노트 작성</button>
-            <button className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl" style={{background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'}}>
-              <PenLine className="w-6 h-6 text-white" />
-            </button>
+      {/* 프리미엄 구독 팝업 (오버레이 포함) */}
+      {showPremiumModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Crown className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">프리미엄 구독</h3>
+              <p className="text-slate-600 dark:text-slate-400">월 ₩9,900으로 모든 프리미엄 기능을 이용하세요.</p>
+            </div>
+            <div className="space-y-4 mb-6">
+              <div className="p-4 bg-slate-50 dark:bg-slate-700/30 rounded-xl">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium text-slate-900 dark:text-white">월간 구독</span>
+                  <span className="text-xl font-bold text-slate-900 dark:text-white">₩9,900</span>
+                </div>
+                <p className="text-sm text-slate-600 dark:text-slate-400">언제든지 취소 가능</p>
+              </div>
+              <div className="p-4 border-2 border-purple-500 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center space-x-2">
+                    <span className="font-medium text-slate-900 dark:text-white">연간 구독</span>
+                    <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">20% 할인</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xl font-bold text-slate-900 dark:text-white">₩95,000</div>
+                    <div className="text-sm text-slate-500 line-through">₩118,800</div>
+                  </div>
+                </div>
+                <p className="text-sm text-slate-600 dark:text-slate-400">2개월 무료</p>
+              </div>
+            </div>
+            <div className="flex space-x-3">
+              <button
+                className="flex-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-4 py-3 rounded-xl font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                onClick={() => setShowPremiumModal(false)}
+              >취소</button>
+              <button className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-3 rounded-xl font-medium transition-all duration-300">결제하기</button>
+            </div>
           </div>
-          {/* 노트 인사이트 분석 */}
-          <div className="flex items-center space-x-3">
-            <button className="bg-[#232b36] text-white/80 font-medium px-5 py-3 rounded-2xl shadow text-sm">노트 인사이트 분석</button>
-            <button className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl" style={{background: 'linear-gradient(135deg, #a21caf 0%, #9333ea 100%)'}}>
-              <Brain className="w-6 h-6 text-white" />
-            </button>
-          </div>
-          {/* AI와 대화하기 */}
-          <div className="flex items-center space-x-3">
-            <button className="bg-[#232b36] text-white/80 font-medium px-5 py-3 rounded-2xl shadow text-sm">AI와 대화하기</button>
-            <button className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl" style={{background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'}}>
-              <MessageCircle className="w-6 h-6 text-white" />
-            </button>
-          </div>
-          {/* X 버튼 */}
-          <button
-            className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-2xl mt-2"
-            style={{background: 'linear-gradient(135deg, #3b82f6 0%, #a21caf 50%, #ec4899 100%)'}}
-            onClick={() => setShowFloatingButtons(false)}
-          >
-            <X className="w-7 h-7 text-white" />
-          </button>
         </div>
-      ) : (
-        <button
-          className="fixed bottom-8 right-8 z-50 w-16 h-16 rounded-2xl flex items-center justify-center shadow-2xl"
-          style={{background: 'linear-gradient(135deg, #3b82f6 0%, #a21caf 50%, #ec4899 100%)'}}
-          onClick={() => setShowFloatingButtons(true)}
-        >
-          <Plus className="w-7 h-7 text-white" />
-        </button>
       )}
     </div>
   );

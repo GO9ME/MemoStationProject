@@ -71,21 +71,27 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
             </div>
           </Link>
 
-          {/* 네비게이션 메뉴 */}
-          <div className="hidden md:flex items-center space-x-1">
+          {/* 네비게이션 메뉴 - 로고와 충분한 간격 확보 */}
+          <div className="hidden md:flex items-center space-x-4 ml-16">
             {navItems.map((item) => {
+              const active = isActivePath(item.path);
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isActivePath(item.path)
-                      ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
-                      : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
-                  }`}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-base font-semibold transition-all duration-150 select-none
+                    ${active
+                      ? 'bg-white shadow-lg ring-2 ring-primary-400 text-primary-700'
+                      : 'bg-transparent text-gray-700 hover:bg-primary-50 hover:text-primary-700 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800'}
+                  `}
+                  tabIndex={0}
+                  // 접근성 및 포커스 스타일 강화
+                  style={{ outline: 'none' }}
                 >
-                  <span className="text-base">{item.emoji}</span>
-                  <span>{item.label}</span>
+                  {/* 아이콘/이모지 */}
+                  <span className="text-lg leading-none">{item.emoji}</span>
+                  {/* 메뉴명 */}
+                  <span className="leading-none">{item.label}</span>
                 </Link>
               );
             })}
