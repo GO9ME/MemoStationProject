@@ -44,7 +44,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/notes" element={<Notes />} />
-            <Route path="/note/:id" element={<NoteDetail />} />
+            <Route path="/notes/:noteId" element={<NoteDetail />} />
             <Route path="/explore" element={<Explore />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/settings" element={<Settings />} />
