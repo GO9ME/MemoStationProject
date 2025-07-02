@@ -44,7 +44,7 @@ def get_summary_and_keywords(content):
 """
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",  # 또는 gpt-4
+            model="gpt-4-1106-preview",  # gpt-4.0 mini/4.1 mini (최신, 비용 효율)
             messages=[{"role": "user", "content": prompt}],
             max_tokens=300,
             temperature=0.5,
