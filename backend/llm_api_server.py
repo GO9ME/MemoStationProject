@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Query
+from fastapi import FastAPI, Request, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import requests
 import os
@@ -101,6 +101,27 @@ def get_memos():
         return {"total": len(memos), "memos": memos}
     except Exception as e:
         return {"total": 0, "memos": [], "error": str(e)}
+
+@app.get("/api/memos/{note_id}")
+def get_memo_detail(note_id: int):
+    """
+    SQLite DB에서 memos 테이블의 특정 메모 상세 정보를 반환합니다.
+    """
+    if not os.path.exists(DB_PATH):
+        raise HTTPException(status_code=404, detail="DB 파일이 존재하지 않습니다.")
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row  # dict 형태로 반환
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM memos WHERE id=?", (note_id,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return dict(row)
+        else:
+            raise HTTPException(status_code=404, detail="메모를 찾을 수 없습니다.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # 추후 LLM 연동 엔드포인트도 이 서버에 추가하면 됩니다.
 
