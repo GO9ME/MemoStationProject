@@ -84,30 +84,28 @@ def get_memo_notes(page: int = Query(1, ge=1), size: int = Query(30, ge=1, le=10
         return {"total": 0, "notes": []}
 
 @app.get("/api/memos")
-def get_memos(page: int = Query(1, ge=1), size: int = Query(4, ge=1, le=100)):
+def get_memos(page: int = Query(1, ge=1), size: int = Query(8, ge=1, le=100)):
     """
     SQLite DB에서 memos 테이블의 메모를 페이지네이션하여 반환합니다.
-    page: 1부터 시작, size: 1~100 (기본 4)
-    최신순 정렬, 전체 개수(total)도 함께 반환
+    page: 1부터 시작, size: 1~100 (기본 8)
+    has_more: 다음 페이지 존재 여부만 반환 (total 없음)
     """
     if not os.path.exists(DB_PATH):
-        return {"total": 0, "memos": []}
+        return {"memos": [], "has_more": False}
     try:
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row  # dict 형태로 반환
         cursor = conn.cursor()
-        # 전체 개수 구하기
-        cursor.execute("SELECT COUNT(*) FROM memos")
-        total = cursor.fetchone()[0]
-        # 페이지네이션 쿼리
         offset = (page - 1) * size
-        cursor.execute("SELECT * FROM memos ORDER BY date DESC LIMIT ? OFFSET ?", (size, offset))
+        # size+1개를 받아서 다음 페이지 존재 여부 판단
+        cursor.execute("SELECT * FROM memos ORDER BY date DESC LIMIT ? OFFSET ?", (size + 1, offset))
         rows = cursor.fetchall()
-        memos = [dict(row) for row in rows]
+        memos = [dict(row) for row in rows[:size]]
+        has_more = len(rows) > size
         conn.close()
-        return {"total": total, "memos": memos}
+        return {"memos": memos, "has_more": has_more}
     except Exception as e:
-        return {"total": 0, "memos": [], "error": str(e)}
+        return {"memos": [], "has_more": False, "error": str(e)}
 
 @app.get("/api/memos/{note_id}")
 def get_memo_detail(note_id: int):
