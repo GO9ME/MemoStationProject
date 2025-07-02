@@ -3,9 +3,15 @@ import sqlite3
 import pandas as pd
 import time
 import os
+from dotenv import load_dotenv
 
-# OpenAI API 키를 환경변수에서 불러오기 (보안상 권장)
-openai.api_key = os.getenv("OPENAI_API_KEY", "YOUR_OPENAI_API_KEY")  # 환경변수 없으면 직접 입력
+# .env 파일 로드
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
+
+# 환경변수에서 OpenAI API 키 불러오기
+openai.api_key = os.getenv("OPENAI_API_KEY")
+if not openai.api_key:
+    raise ValueError("OPENAI_API_KEY가 .env 파일에 설정되어 있지 않습니다.")
 
 # CSV 파일 경로
 csv_path = "backend/data/memo/generated_memos (2).csv"
@@ -38,7 +44,7 @@ def get_summary_and_keywords(content):
 """
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4.1-mini",  # 또는 gpt-4
+            model="gpt-3.5-turbo",  # 또는 gpt-4
             messages=[{"role": "user", "content": prompt}],
             max_tokens=300,
             temperature=0.5,
