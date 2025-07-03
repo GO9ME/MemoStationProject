@@ -8,6 +8,8 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import NoteDetail from './pages/NoteDetail';
 import ManageIntegration from './pages/ManageIntegration';
+import StrategyContent from './pages/StrategyContent';
+import PracticeDashboard from './pages/PracticeDashboard';
 import FloatingActionButtons from './components/FloatingActionButtons';
 import './App.css';
 
@@ -47,6 +49,8 @@ function App() {
             <Route path="/notes/:noteId" element={<NoteDetail />} />
             <Route path="/explore" element={<Explore />} />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/strategy-content" element={<StrategyContent />} />
+            <Route path="/practice-dashboard" element={<PracticeDashboard />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/settings/integration/:integrationId" element={<ManageIntegration />} />
           </Routes>

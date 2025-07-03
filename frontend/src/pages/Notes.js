@@ -429,28 +429,8 @@ const Notes = () => {
             </div>
           </div>
           {/* 가치 흐름/AI 추천 루틴/진행도 카드 등 상단 카드 예시 */}
-          <button className="w-full bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-6 mb-6 border border-blue-200/50 dark:border-blue-800/50 hover:from-blue-100 dark:hover:from-blue-900/30 hover:to-indigo-100 dark:hover:to-indigo-900/30 transition-all duration-300 group hover:scale-[1.02] hover:shadow-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <span className="text-2xl font-bold text-slate-900 dark:text-white">나의 최근 가치 흐름</span>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-slate-900 dark:text-white">지난 7일간 노트 작성 패턴 분석</div>
-              </div>
-            </div>
-            <div className="mt-4 flex items-center justify-between">
-              <div className="flex-1 mr-4">
-                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
-                  <div className="bg-blue-500 h-2 rounded-full transition-all duration-500 group-hover:bg-blue-400" style={{ width: '40%' }}></div>
-                </div>
-              </div>
-              <div className="bg-blue-600 group-hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center space-x-2">
-                <span>분석하기</span>
-              </div>
-            </div>
-          </button>
+          <button class="w-full bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-6 mb-6 border border-blue-200/50 dark:border-blue-800/50 hover:from-blue-100 dark:hover:from-blue-900/30 hover:to-indigo-100 dark:hover:to-indigo-900/30 transition-all duration-300 group hover:scale-[1.02] hover:shadow-lg" onClick={() => navigate('/reports')}>
+            <div class="flex items-center justify-between"><div class="flex items-center space-x-4"><div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up w-6 h-6 text-white"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg></div><div class="text-left"><h3 class="text-lg font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">나의 최근 가치 흐름</h3><p class="text-sm text-slate-600 dark:text-slate-400">지난 7일간 노트 작성 패턴 분석</p></div></div><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-right w-5 h-5 text-slate-400 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-200"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></div><div class="mt-4 flex items-center space-x-6"><div class="flex items-center space-x-2"><div class="w-3 h-3 bg-blue-500 rounded-full"></div><span class="text-sm font-medium text-slate-700 dark:text-slate-300">자기 개발 42%</span><span class="text-xs font-medium text-green-600 dark:text-green-400">+15%</span></div><div class="flex items-center space-x-2"><div class="w-3 h-3 bg-purple-500 rounded-full"></div><span class="text-sm font-medium text-slate-700 dark:text-slate-300">정보 정리 30%</span><span class="text-xs font-medium text-red-600 dark:text-red-400">-5%</span></div><div class="flex items-center space-x-2"><div class="w-3 h-3 bg-green-500 rounded-full"></div><span class="text-sm font-medium text-slate-700 dark:text-slate-300">문제 해결 28%</span><span class="text-xs font-medium text-green-600 dark:text-green-400">+8%</span></div></div></button>
           {/* AI 추천 루틴 카드 */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 mb-6 border border-slate-200/50 dark:border-slate-700/50 shadow-lg">
             <div className="flex items-center justify-between mb-4">
