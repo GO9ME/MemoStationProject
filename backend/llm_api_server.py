@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import json
 import csv
 import pandas as pd
-import sqlite3
+import mysql.connector
 
 # .env 파일 로드
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
@@ -29,7 +29,25 @@ NOTION_DATABASE_ID = os.getenv("NOTION_DATABASE_ID")
 DATA_PATH = os.path.join(os.path.dirname(__file__), 'data', 'notion', 'notion_notes.json')
 MEMO_CSV_PATH = os.path.join(os.path.dirname(__file__), 'data', 'memo', 'generated_memos (2).csv')
 
-DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'memos.db')
+# MySQL 접속 정보 환경변수에서 불러오기
+MYSQL_CONFIG = {
+    'host': os.getenv("MYSQL_HOST", "localhost"),
+    'port': int(os.getenv("MYSQL_PORT", 3306)),
+    'user': os.getenv("MYSQL_USER"),
+    'password': os.getenv("MYSQL_PASSWORD"),
+    'database': os.getenv("MYSQL_DB"),
+}
+
+def get_mysql_connection():
+    """
+    MySQL DB 커넥션 반환 함수
+    """
+    try:
+        conn = mysql.connector.connect(**MYSQL_CONFIG)
+        return conn
+    except Exception as e:
+        print("MySQL 연결 오류:", e)
+        return None
 
 @app.post("/api/notion")
 def get_notion_pages():
@@ -86,21 +104,17 @@ def get_memo_notes(page: int = Query(1, ge=1), size: int = Query(30, ge=1, le=10
 @app.get("/api/memos")
 def get_memos(page: int = Query(1, ge=1), size: int = Query(8, ge=1, le=100)):
     """
-    SQLite DB에서 memos 테이블의 메모를 페이지네이션하여 반환합니다.
-    page: 1부터 시작, size: 1~100 (기본 8)
-    has_more: 다음 페이지 존재 여부만 반환 (total 없음)
+    MySQL DB에서 memos 테이블의 메모를 페이지네이션하여 반환합니다.
     """
-    if not os.path.exists(DB_PATH):
-        return {"memos": [], "has_more": False}
     try:
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row  # dict 형태로 반환
-        cursor = conn.cursor()
+        conn = get_mysql_connection()
+        if not conn:
+            return {"memos": [], "has_more": False, "error": "DB 연결 실패"}
+        cursor = conn.cursor(dictionary=True)
         offset = (page - 1) * size
-        # size+1개를 받아서 다음 페이지 존재 여부 판단
-        cursor.execute("SELECT * FROM memos ORDER BY date DESC LIMIT ? OFFSET ?", (size + 1, offset))
+        cursor.execute("SELECT * FROM memos ORDER BY date DESC LIMIT %s OFFSET %s", (size + 1, offset))
         rows = cursor.fetchall()
-        memos = [dict(row) for row in rows[:size]]
+        memos = rows[:size]
         has_more = len(rows) > size
         conn.close()
         return {"memos": memos, "has_more": has_more}
@@ -110,19 +124,18 @@ def get_memos(page: int = Query(1, ge=1), size: int = Query(8, ge=1, le=100)):
 @app.get("/api/memos/{note_id}")
 def get_memo_detail(note_id: int):
     """
-    SQLite DB에서 memos 테이블의 특정 메모 상세 정보를 반환합니다.
+    MySQL DB에서 memos 테이블의 특정 메모 상세 정보를 반환합니다.
     """
-    if not os.path.exists(DB_PATH):
-        raise HTTPException(status_code=404, detail="DB 파일이 존재하지 않습니다.")
     try:
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row  # dict 형태로 반환
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM memos WHERE id=?", (note_id,))
+        conn = get_mysql_connection()
+        if not conn:
+            raise HTTPException(status_code=500, detail="DB 연결 실패")
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM memos WHERE id=%s", (note_id,))
         row = cursor.fetchone()
         conn.close()
         if row:
-            return dict(row)
+            return row
         else:
             raise HTTPException(status_code=404, detail="메모를 찾을 수 없습니다.")
     except Exception as e:
