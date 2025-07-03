@@ -53,6 +53,10 @@ temp/
 *.tmp
 *.temp
 
+# Python 관련
+__pycache__/
+*.pyc
+
 # 백업 파일
 *.backup
 *.bak
@@ -123,3 +127,9 @@ memo.txt
 .firebase/
 .firebaserc
 firebase-debug.log 
+.cursor/rules/coding-preferences.mdc
+.cursor/rules/communication-preferences.mdc
+.cursor/rules/development-patterns.mdc
+.cursor/rules/project-structure.mdc
+.cursor/rules/tech-stack.mdc
+.cursor/rules/workflow-preferences.mdc
