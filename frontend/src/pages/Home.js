@@ -129,6 +129,31 @@ const Home = () => {
     { key: 'thought', icon: <MessageCircle className="w-5 h-5 text-slate-400" /> },
   ];
 
+  // 빠른 메모 저장 함수
+  const handleQuickMemoSave = async () => {
+    if (!memoText) return alert('메모를 입력하세요!');
+    try {
+      const res = await fetch('http://121.171.194.10:8000/api/quick-memo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: memoText, mood: selectedMood }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('저장 완료!');
+        setShowQuickMemo(false);
+        setMemoText('');
+        setSelectedMood(null);
+        // 저장 후 페이지 새로고침 (리다이렉트)
+        window.location.reload();
+      } else {
+        alert('저장 실패');
+      }
+    } catch (e) {
+      alert('저장 중 오류 발생');
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12 font-korean">
       {/* ========================= AI 인사이트 카드 ========================= */}
@@ -249,7 +274,7 @@ const Home = () => {
             <div className="flex items-center justify-end mt-4 space-x-2">
               <button
                 className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium transition-colors"
-                onClick={() => { setShowQuickMemo(false); setMemoText(""); setSelectedMood(null); }}
+                onClick={handleQuickMemoSave}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-5 h-5 mr-1"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2V7m0 5v6m9 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 <span>저장</span>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Settings,
   TrendingUp,
@@ -192,6 +192,178 @@ const filterButtons = [
 const Explore = () => {
   // 선택된 추천 전략 상태
   const [selectedStrategy, setSelectedStrategy] = useState('balance');
+  const [recommendations, setRecommendations] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [userId] = useState('사용자_001'); // 임시 사용자 ID를 '사용자_001'로 고정
+
+  // 추천 데이터 가져오기
+  useEffect(() => {
+    fetchRecommendations();
+  }, [userId]);
+
+  const fetchRecommendations = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      console.log("API 호출 시작:", `http://127.0.0.1:8000/recommend`, { user_id: userId });
+      const response = await fetch(`http://127.0.0.1:8000/recommend`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ user_id: userId })
+      });
+      console.log("API 응답 상태:", response.status, response.statusText);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("API 오류 응답:", errorText);
+        throw new Error(`추천 데이터를 가져오는데 실패했습니다. 상태 코드: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log("API 응답 데이터:", data);
+      setRecommendations(data);
+    } catch (err) {
+      console.error("API 호출 오류:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderBlogCard = (blog, index) => (
+    <div key={index} className="bg-white dark:bg-slate-800 rounded-3xl overflow-hidden border border-slate-200/50 dark:border-slate-700/50 hover:shadow-2xl hover:shadow-slate-900/10 dark:hover:shadow-slate-900/50 transition-all duration-300 hover:scale-[1.02] group">
+      {/* 썸네일 이미지 */}
+      <div className="relative h-48 overflow-hidden">
+        {/* 네이버 등 외부 이미지는 프록시를 통해 불러옴 */}
+        {/* 썸네일 URL이 비어있지 않은 경우에만 프록시 경유 */}
+        {(() => {
+          const isValidThumbnail = blog.thumbNailUrl && blog.thumbNailUrl.trim() !== '';
+          return (
+            <img 
+              src={isValidThumbnail ? `/api/image-proxy?url=${encodeURIComponent(blog.thumbNailUrl)}` : 'https://images.pexels.com/photos/1181244/pexels-photo-1181244.jpeg?auto=compress&cs=tinysrgb&w=800'}
+              alt={blog.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              // 이미지 로드 실패 시 기본 이미지로 대체
+              onError={(e) => {
+                e.target.src = 'https://images.pexels.com/photos/1181244/pexels-photo-1181244.jpeg?auto=compress&cs=tinysrgb&w=800';
+              }}
+            />
+          );
+        })()}
+        <div className="absolute top-4 left-4">
+          <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm px-3 py-2 rounded-full text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center space-x-2">
+            <Clock className="w-4 h-4" />
+            <span>{blog.date || '최근'}</span>
+          </div>
+        </div>
+        <div className="absolute top-4 right-4">
+          <Heart className="w-6 h-6 text-white/80 hover:text-red-400 cursor-pointer transition-colors drop-shadow-lg" />
+        </div>
+        <div className="absolute bottom-4 left-4">
+          <div className="inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+            <TrendingUp className="w-3 h-3" />
+            <span>블로그 추천</span>
+          </div>
+        </div>
+      </div>
+      
+      {/* 카드 본문 */}
+      <div className="p-6">
+        <div className="mb-3">
+          <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">{blog.category || '블로그'}</span>
+        </div>
+        <h3 className="font-bold text-slate-900 dark:text-white text-xl mb-3 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+          {blog.title}
+        </h3>
+        <p className="text-slate-600 dark:text-slate-400 mb-4 line-clamp-2 leading-relaxed">
+          {blog.content ? blog.content.substring(0, 100) + '...' : '추천 콘텐츠입니다.'}
+        </p>
+        
+        {/* 추천 점수 */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-4 mb-4 border border-blue-100/50 dark:border-blue-800/30">
+          <div className="flex items-center space-x-2 mb-2">
+            <Brain className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wide">추천 이유</span>
+          </div>
+          <p className="text-sm text-slate-700 dark:text-slate-300 font-medium mb-2">
+            관심 키워드 기반 추천 (점수: {blog.recommendation_score})
+          </p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">
+            최근 메모 분석 결과 관심있어 하실 만한 콘텐츠입니다.
+          </p>
+        </div>
+        
+        {/* 통계 */}
+        <div className="grid grid-cols-2 gap-3 mb-4 text-xs">
+          <div className="flex items-center space-x-2 text-slate-500 dark:text-slate-400">
+            <Eye className="w-3 h-3" />
+            <span>조회수</span>
+          </div>
+          <div className="flex items-center space-x-2 text-slate-500 dark:text-slate-400">
+            <Bookmark className="w-3 h-3" />
+            <span>공감 {blog.sympathy_count || 0}</span>
+          </div>
+        </div>
+        
+        {/* 읽기 버튼 */}
+        <button 
+          onClick={() => window.open(blog.url, '_blank')}
+          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center space-x-2 group shadow-lg hover:shadow-xl"
+        >
+          <span>지금 읽어보기</span>
+          <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderYouTubeCard = (video, index) => (
+    <div key={index} className="bg-white dark:bg-slate-800 rounded-3xl overflow-hidden border border-slate-200/50 dark:border-slate-700/50 hover:shadow-2xl hover:shadow-slate-900/10 dark:hover:shadow-slate-900/50 transition-all duration-300 hover:scale-[1.02] group">
+      {/* 유튜브 썸네일 */}
+      <div className="relative h-48 overflow-hidden">
+        <img 
+          src={`https://img.youtube.com/vi/${video.video_id}/maxresdefault.jpg`} 
+          alt={video.title} 
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          onError={(e) => {
+            e.target.src = `https://img.youtube.com/vi/${video.video_id}/hqdefault.jpg`;
+          }}
+        />
+        <div className="absolute top-4 left-4">
+          <div className="bg-red-600 text-white px-3 py-2 rounded-full text-sm font-medium flex items-center space-x-2">
+            <span>YouTube</span>
+          </div>
+        </div>
+        <div className="absolute bottom-4 left-4">
+          <div className="inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">
+            <span>영상 추천</span>
+          </div>
+        </div>
+      </div>
+      
+      {/* 카드 본문 */}
+      <div className="p-6">
+        <h3 className="font-bold text-slate-900 dark:text-white text-xl mb-3 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+          {video.title}
+        </h3>
+        <p className="text-slate-600 dark:text-slate-400 mb-4 line-clamp-2 leading-relaxed">
+          {video.description ? video.description.substring(0, 100) + '...' : '추천 영상입니다.'}
+        </p>
+        
+        {/* 시청 버튼 */}
+        <button 
+          onClick={() => window.open(video.url, '_blank')}
+          className="w-full bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white px-6 py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center space-x-2 group shadow-lg hover:shadow-xl"
+        >
+          <span>지금 시청하기</span>
+          <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -327,72 +499,107 @@ const Explore = () => {
           </div>
           {/* 추천 콘텐츠 카드 그리드 */}
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
-            {contentCards.map((item, idx) => (
-              <div key={idx} className="bg-white dark:bg-slate-800 rounded-3xl overflow-hidden border border-slate-200/50 dark:border-slate-700/50 hover:shadow-2xl hover:shadow-slate-900/10 dark:hover:shadow-slate-900/50 transition-all duration-300 hover:scale-[1.02] group">
-                {/* 이미지 및 상단 통계/태그 */}
-                <div className="relative h-48 overflow-hidden">
-                  <img src={item.img} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                  <div className="absolute top-4 left-4">
-                    <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm px-3 py-2 rounded-full text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center space-x-2">
-                      <Clock className="w-4 h-4" />
-                      <span>{item.time}</span>
-                    </div>
-                  </div>
-                  <div className="absolute top-4 right-4">
-                    <Heart className="w-6 h-6 text-white/80 hover:text-red-400 cursor-pointer transition-colors drop-shadow-lg" />
-                  </div>
-                  <div className="absolute bottom-4 left-4">
-                    <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${item.tagColor}`}>
-                      {item.tag === '실용형 추천' && <Lightbulb className="w-3 h-3" />}
-                      {item.tag === '트렌드형 추천' && <TrendingUp className="w-3 h-3" />}
-                      {item.tag === '미지형 추천' && <Compass className="w-3 h-3" />}
-                      <span>{item.tag}</span>
-                    </div>
-                  </div>
-                </div>
-                {/* 카드 본문 */}
-                <div className="p-6">
-                  <div className="mb-3">
-                    <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">{item.category}</span>
-                  </div>
-                  <h3 className="font-bold text-slate-900 dark:text-white text-xl mb-3 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{item.title}</h3>
-                  <p className="text-slate-600 dark:text-slate-400 mb-4 line-clamp-2 leading-relaxed">{item.desc}</p>
-                  {/* 추천 이유 */}
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-4 mb-4 border border-blue-100/50 dark:border-blue-800/30">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <Brain className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                      <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wide">추천 이유</span>
-                    </div>
-                    <p className="text-sm text-slate-700 dark:text-slate-300 font-medium mb-2">{item.reason}</p>
-                    <p className="text-xs text-slate-600 dark:text-slate-400">{item.reasonDetail}</p>
-                  </div>
-                  {/* 통계 */}
-                  <div className="grid grid-cols-2 gap-3 mb-4 text-xs">
-                    <div className="flex items-center space-x-2 text-slate-500 dark:text-slate-400">
-                      <Eye className="w-3 h-3" />
-                      <span>{item.stat.view}</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-slate-500 dark:text-slate-400">
-                      <Bookmark className="w-3 h-3" />
-                      <span>{item.stat.bookmark}</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-slate-500 dark:text-slate-400">
-                      <Share2 className="w-3 h-3" />
-                      <span>{item.stat.share}</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-slate-500 dark:text-slate-400">
-                      <CheckCircle className="w-3 h-3" />
-                      <span>{item.stat.complete}</span>
-                    </div>
-                  </div>
-                  {/* 읽기 버튼 */}
-                  <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center space-x-2 group shadow-lg hover:shadow-xl">
-                    <span>지금 읽어보기</span>
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                  </button>
-                </div>
+            {loading && (
+              <div className="col-span-full flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
               </div>
-            ))}
+            )}
+            
+            {error && (
+              <div className="col-span-full bg-red-50 dark:bg-red-900/20 rounded-2xl p-6 border border-red-200/50 dark:border-red-800/50">
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs">!</span>
+                  </div>
+                  <span className="text-red-700 dark:text-red-300 font-medium">오류 발생</span>
+                </div>
+                <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+              </div>
+            )}
+            
+            {recommendations && recommendations.content && (
+              <>
+                {/* 블로그 추천 */}
+                {recommendations.content.blogs && recommendations.content.blogs.map((blog, index) => 
+                  renderBlogCard(blog, `blog-${index}`)
+                )}
+                
+                {/* 유튜브 추천 */}
+                {recommendations.content.youtube && recommendations.content.youtube.map((video, index) => 
+                  renderYouTubeCard(video, `youtube-${index}`)
+                )}
+              </>
+            )}
+            
+            {/* 추천 데이터가 없을 때 기본 카드 표시 */}
+            {!loading && !error && (!recommendations || (!recommendations.content?.blogs?.length && !recommendations.content?.youtube?.length)) && (
+              contentCards.map((item, idx) => (
+                <div key={idx} className="bg-white dark:bg-slate-800 rounded-3xl overflow-hidden border border-slate-200/50 dark:border-slate-700/50 hover:shadow-2xl hover:shadow-slate-900/10 dark:hover:shadow-slate-900/50 transition-all duration-300 hover:scale-[1.02] group">
+                  {/* 이미지 및 상단 통계/태그 */}
+                  <div className="relative h-48 overflow-hidden">
+                    <img src={item.img} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    <div className="absolute top-4 left-4">
+                      <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm px-3 py-2 rounded-full text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center space-x-2">
+                        <Clock className="w-4 h-4" />
+                        <span>{item.time}</span>
+                      </div>
+                    </div>
+                    <div className="absolute top-4 right-4">
+                      <Heart className="w-6 h-6 text-white/80 hover:text-red-400 cursor-pointer transition-colors drop-shadow-lg" />
+                    </div>
+                    <div className="absolute bottom-4 left-4">
+                      <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${item.tagColor}`}>
+                        {item.tag === '실용형 추천' && <Lightbulb className="w-3 h-3" />}
+                        {item.tag === '트렌드형 추천' && <TrendingUp className="w-3 h-3" />}
+                        {item.tag === '미지형 추천' && <Compass className="w-3 h-3" />}
+                        <span>{item.tag}</span>
+                      </div>
+                    </div>
+                  </div>
+                  {/* 카드 본문 */}
+                  <div className="p-6">
+                    <div className="mb-3">
+                      <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">{item.category}</span>
+                    </div>
+                    <h3 className="font-bold text-slate-900 dark:text-white text-xl mb-3 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{item.title}</h3>
+                    <p className="text-slate-600 dark:text-slate-400 mb-4 line-clamp-2 leading-relaxed">{item.desc}</p>
+                    {/* 추천 이유 */}
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-4 mb-4 border border-blue-100/50 dark:border-blue-800/30">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Brain className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wide">추천 이유</span>
+                      </div>
+                      <p className="text-sm text-slate-700 dark:text-slate-300 font-medium mb-2">{item.reason}</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">{item.reasonDetail}</p>
+                    </div>
+                    {/* 통계 */}
+                    <div className="grid grid-cols-2 gap-3 mb-4 text-xs">
+                      <div className="flex items-center space-x-2 text-slate-500 dark:text-slate-400">
+                        <Eye className="w-3 h-3" />
+                        <span>{item.stat.view}</span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-slate-500 dark:text-slate-400">
+                        <Bookmark className="w-3 h-3" />
+                        <span>{item.stat.bookmark}</span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-slate-500 dark:text-slate-400">
+                        <Share2 className="w-3 h-3" />
+                        <span>{item.stat.share}</span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-slate-500 dark:text-slate-400">
+                        <CheckCircle className="w-3 h-3" />
+                        <span>{item.stat.complete}</span>
+                      </div>
+                    </div>
+                    {/* 읽기 버튼 */}
+                    <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center space-x-2 group shadow-lg hover:shadow-xl">
+                      <span>지금 읽어보기</span>
+                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
           {/* 이전 추천 콘텐츠 보기 버튼 */}
           <div className="text-center">

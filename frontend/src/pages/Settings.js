@@ -17,6 +17,8 @@ import {
   Plus,
   ArrowRight,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import UpgradeModal from '../components/UpgradeModal';
 
 // 향후 상태 관리를 위해 prop으로 데이터를 받을 수 있도록 컴포넌트 분리
 // 예시: const PlanSummary = ({ planName, planDescription }) => ( ... );
@@ -24,7 +26,7 @@ import {
 // const NOTION_TOKEN = process.env.REACT_APP_NOTION_TOKEN;
 // const NOTION_DATABASE_ID = process.env.REACT_APP_NOTION_DATABASE_ID;
 
-const NOTION_PROXY_URL = 'http://localhost:8000/api/notion';
+const NOTION_PROXY_URL = 'http://121.171.194.10:8000/api/notion';
 
 // Notion 페이지에서 제목 속성을 자동으로 추출하는 함수
 function getNotionPageTitle(page) {
@@ -47,14 +49,15 @@ const Settings = () => {
   const [showFloatingButtons, setShowFloatingButtons] = useState(true);
   // 프리미엄 구독 팝업 상태
   const [showPremiumModal, setShowPremiumModal] = useState(false);
-  // 플랜 상세 비교 팝업 상태
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
   // 노션 메모 목록 상태
   const [notionPages, setNotionPages] = useState([]);
   const [notionLoading, setNotionLoading] = useState(false);
   const [notionError, setNotionError] = useState(null);
   // 노션 메모 저장 상태
   const [saveMessage, setSaveMessage] = useState("");
+  const navigate = useNavigate();
+  const [selectedPlan, setSelectedPlan] = useState('pro'); // 'basic' | 'pro' | 'team', 기본값은 pro(가장 인기)
+  const [showPlanTable, setShowPlanTable] = useState(false); // 플랜 상세 비교표 표시 상태
 
   // Google 로그인 훅 초기화
   const handleGoogleLogin = useGoogleLogin({
@@ -96,7 +99,7 @@ const Settings = () => {
   const saveNotionPages = async () => {
     setSaveMessage("");
     try {
-      const res = await fetch('http://localhost:8000/api/notion-save', {
+      const res = await fetch('http://121.171.194.10:8000/api/notion-save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(notionPages)
@@ -109,6 +112,15 @@ const Settings = () => {
       }
     } catch (err) {
       setSaveMessage("저장 중 오류 발생: " + err.message);
+    }
+  };
+
+  // 플랜 업그레이드/결제 함수 (추후 실제 연동)
+  const handleUpgrade = () => {
+    if (selectedPlan === 'pro') {
+      alert('프로 플랜 업그레이드(결제) 로직 실행');
+    } else if (selectedPlan === 'team') {
+      alert('팀 플랜 업그레이드(결제) 로직 실행');
     }
   };
 
@@ -194,7 +206,7 @@ const Settings = () => {
             </div>
             <button
               className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium text-sm flex items-center space-x-1"
-              onClick={() => setShowDetailsModal(true)}
+              onClick={() => setShowPremiumModal(true)}
             >
               <span>자세히 알아보기</span>
               <ArrowRight className="w-4 h-4" />
@@ -419,244 +431,7 @@ const Settings = () => {
       </div>
       {/* 프리미엄 구독 모달 */}
       {showPremiumModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full">
-            <div class="text-center mb-6">
-              <div class="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Crown className="w-8 h-8 text-white"/>
-              </div>
-              <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2">프리미엄 구독</h3>
-              <p class="text-slate-600 dark:text-slate-400">월 ₩9,900으로 모든 프리미엄 기능을 이용하세요.</p>
-            </div>
-            <div class="space-y-4 mb-6">
-              <div class="p-4 bg-slate-50 dark:bg-slate-700/30 rounded-xl">
-                <div class="flex items-center justify-between mb-2">
-                  <span class="font-medium text-slate-900 dark:text-white">월간 구독</span>
-                  <span class="text-xl font-bold text-slate-900 dark:text-white">₩9,900</span>
-                </div>
-                <p class="text-sm text-slate-600 dark:text-slate-400">언제든지 취소 가능</p>
-              </div>
-              <div class="p-4 border-2 border-purple-500 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-                <div class="flex items-center justify-between mb-2">
-                  <div class="flex items-center space-x-2">
-                    <span class="font-medium text-slate-900 dark:text-white">연간 구독</span>
-                    <span class="bg-green-500 text-white text-xs px-2 py-1 rounded-full">20% 할인</span>
-                  </div>
-                  <div class="text-right">
-                    <div class="text-xl font-bold text-slate-900 dark:text-white">₩95,000</div>
-                    <div class="text-sm text-slate-500 line-through">₩118,800</div>
-                  </div>
-                </div>
-                <p class="text-sm text-slate-600 dark:text-slate-400">2개월 무료</p>
-              </div>
-            </div>
-            <div class="flex space-x-3">
-              <button class="flex-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-4 py-3 rounded-xl font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors" onClick={() => setShowPremiumModal(false)}>취소</button>
-              <button class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-3 rounded-xl font-medium transition-all duration-300">결제하기</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 플랜 상세 비교 팝업 */}
-      {showDetailsModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-            <div class="sticky top-0 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-6 rounded-t-2xl">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-3">
-                  <Crown className="w-6 h-6 text-purple-500"/>
-                  <span class="text-lg font-bold text-slate-900 dark:text-white">플랜 업그레이드</span>
-                </div>
-                <button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors" onClick={() => setShowDetailsModal(false)}>
-                  <X className="w-6 h-6"/>
-                </button>
-              </div>
-            </div>
-            <div class="p-6">
-              <div class="text-center mb-8">
-                <div class="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Crown className="w-8 h-8 text-white"/>
-                </div>
-                <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">프리미엄으로 업그레이드</h2>
-                <p class="text-slate-600 dark:text-slate-400">더 강력한 AI 기능과 무제한 연동으로 생산성을 극대화하세요</p>
-              </div>
-              <div class="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-2xl p-6 mb-8 border border-purple-200/50 dark:border-purple-800/50">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div class="flex items-center space-x-3">
-                    <Check className="w-5 h-5 text-green-500"/>
-                    <span class="text-slate-700 dark:text-slate-300">고급 AI 분석</span>
-                  </div>
-                  <div class="flex items-center space-x-3">
-                    <Check className="w-5 h-5 text-green-500"/>
-                    <span class="text-slate-700 dark:text-slate-300">외부 툴 연동</span>
-                  </div>
-                  <div class="flex items-center space-x-3">
-                    <Check className="w-5 h-5 text-green-500"/>
-                    <span class="text-slate-700 dark:text-slate-300">무제한 메모</span>
-                  </div>
-                  <div class="flex items-center space-x-3">
-                    <Check className="w-5 h-5 text-green-500"/>
-                    <span class="text-slate-700 dark:text-slate-300">우선 고객 지원</span>
-                  </div>
-                </div>
-              </div>
-              <div class="flex items-center justify-center mb-8">
-                <div class="bg-slate-100 dark:bg-slate-700 rounded-2xl p-1 flex">
-                  <button class="px-6 py-3 rounded-xl font-medium transition-all duration-200 text-slate-600 dark:text-slate-400">월간 결제</button>
-                  <button class="px-6 py-3 rounded-xl font-medium transition-all duration-200 relative bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm">연간 결제<span class="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">20% 할인</span></button>
-                </div>
-              </div>
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div class="relative p-6 rounded-2xl border-2 transition-all duration-200 cursor-pointer border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 ">
-                  <div class="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <span class="bg-blue-500 text-white text-sm font-bold px-4 py-1 rounded-full">현재 이용 중</span>
-                  </div>
-                  <div class="text-center mb-6">
-                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2">기본 플랜</h3>
-                    <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">개인 사용자를 위한 기본 기능</p>
-                    <div class="mb-4">
-                      <div class="text-3xl font-bold text-slate-900 dark:text-white">무료</div>
-                    </div>
-                  </div>
-                  <div class="space-y-3">
-                    <div class="flex items-start space-x-3">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5"/>
-                      <span class="text-sm text-slate-700 dark:text-slate-300">노트 작성 무제한</span>
-                    </div>
-                    <div class="flex items-start space-x-3">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5"/>
-                      <span class="text-sm text-slate-700 dark:text-slate-300">기본 AI 추천</span>
-                    </div>
-                    <div class="flex items-start space-x-3">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5"/>
-                      <span class="text-sm text-slate-700 dark:text-slate-300">태그 및 검색</span>
-                    </div>
-                    <div class="flex items-start space-x-3">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5"/>
-                      <span class="text-sm text-slate-700 dark:text-slate-300">기본 리포트</span>
-                    </div>
-                    <div class="flex items-start space-x-3">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5"/>
-                      <span class="text-sm text-slate-700 dark:text-slate-300">모바일 앱 사용</span>
-                    </div>
-                  </div>
-                </div>
-                <div class="relative p-6 rounded-2xl border-2 transition-all duration-200 cursor-pointer border-purple-500 bg-purple-50 dark:bg-purple-900/20 ring-2 ring-purple-500 ring-opacity-20">
-                  <div class="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <span class="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm font-bold px-4 py-1 rounded-full">가장 인기</span>
-                  </div>
-                  <div class="text-center mb-6">
-                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2">프로 플랜</h3>
-                    <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">전문가를 위한 고급 기능</p>
-                    <div class="mb-4">
-                      <div class="text-3xl font-bold text-slate-900 dark:text-white">₩7,917</div>
-                      <div class="text-sm text-slate-500 dark:text-slate-400">월 (연간 결제)</div>
-                      <div class="text-xs text-green-600 dark:text-green-400 mt-1">연간 ₩95,000 (20% 할인)</div>
-                    </div>
-                  </div>
-                  <div class="space-y-3">
-                    <div class="flex items-start space-x-3">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5"/>
-                      <span class="text-sm text-slate-700 dark:text-slate-300">모든 기본 플랜 기능</span>
-                    </div>
-                    <div class="flex items-start space-x-3">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5"/>
-                      <span class="text-sm text-slate-700 dark:text-slate-300">팀 워크스페이스</span>
-                    </div>
-                    <div class="flex items-start space-x-3">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5"/>
-                      <span class="text-sm text-slate-700 dark:text-slate-300">노트 공유 및 협업</span>
-                    </div>
-                    <div class="flex items-start space-x-3">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5"/>
-                      <span class="text-sm text-slate-700 dark:text-slate-300">팀 인사이트 대시보드</span>
-                    </div>
-                    <div class="flex items-start space-x-3">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5"/>
-                      <span class="text-sm text-slate-700 dark:text-slate-300">관리자 권한 설정</span>
-                    </div>
-                    <div class="flex items-start space-x-3">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5"/>
-                      <span class="text-sm text-slate-700 dark:text-slate-300">팀 활동 분석</span>
-                    </div>
-                    <div class="flex items-start space-x-3">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5"/>
-                      <span class="text-sm text-slate-700 dark:text-slate-300">무제한 게스트 초대</span>
-                    </div>
-                    <div class="flex items-start space-x-3">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5"/>
-                      <span class="text-sm text-slate-700 dark:text-slate-300">24/7 전담 지원</span>
-                    </div>
-                    <div class="flex items-start space-x-3">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5"/>
-                      <span class="text-sm text-slate-700 dark:text-slate-300">SSO 연동</span>
-                    </div>
-                  </div>
-                  <div class="mt-6">
-                    <div class="w-full bg-purple-600 text-white py-3 rounded-xl text-center font-medium">선택됨</div>
-                  </div>
-                </div>
-                <div class="relative p-6 rounded-2xl border-2 transition-all duration-200 cursor-pointer border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 ">
-                  <div class="text-center mb-6">
-                    <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2">팀 플랜</h3>
-                    <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">팀과 조직을 위한 협업 기능</p>
-                    <div class="mb-4">
-                      <div class="text-3xl font-bold text-slate-900 dark:text-white">₩8,250</div>
-                      <div class="text-sm text-slate-500 dark:text-slate-400">월 (연간 결제)</div>
-                      <div class="text-xs text-green-600 dark:text-green-400 mt-1">연간 ₩99,000 (20% 할인)</div>
-                    </div>
-                  </div>
-                  <div class="space-y-3">
-                    <div class="flex items-start space-x-3">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5"/>
-                      <span class="text-sm text-slate-700 dark:text-slate-300">모든 프로 플랜 기능</span>
-                    </div>
-                    <div class="flex items-start space-x-3">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5"/>
-                      <span class="text-sm text-slate-700 dark:text-slate-300">팀 워크스페이스</span>
-                    </div>
-                    <div class="flex items-start space-x-3">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5"/>
-                      <span class="text-sm text-slate-700 dark:text-slate-300">노트 공유 및 협업</span>
-                    </div>
-                    <div class="flex items-start space-x-3">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5"/>
-                      <span class="text-sm text-slate-700 dark:text-slate-300">팀 인사이트 대시보드</span>
-                    </div>
-                    <div class="flex items-start space-x-3">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5"/>
-                      <span class="text-sm text-slate-700 dark:text-slate-300">관리자 권한 설정</span>
-                    </div>
-                    <div class="flex items-start space-x-3">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5"/>
-                      <span class="text-sm text-slate-700 dark:text-slate-300">팀 활동 분석</span>
-                    </div>
-                    <div class="flex items-start space-x-3">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5"/>
-                      <span class="text-sm text-slate-700 dark:text-slate-300">무제한 게스트 초대</span>
-                    </div>
-                    <div class="flex items-start space-x-3">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5"/>
-                      <span class="text-sm text-slate-700 dark:text-slate-300">24/7 전담 지원</span>
-                    </div>
-                    <div class="flex items-start space-x-3">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5"/>
-                      <span class="text-sm text-slate-700 dark:text-slate-300">SSO 연동</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="text-center mb-8">
-                <button class="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium text-sm">플랜 상세 비교하기</button>
-              </div>
-              <div class="flex space-x-4">
-                <button class="flex-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-6 py-4 rounded-xl font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors" onClick={() => setShowDetailsModal(false)}>나중에</button>
-                <button class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-4 rounded-xl font-medium transition-all duration-300">프로 플랜 업그레이드</button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <UpgradeModal isOpen={showPremiumModal} onClose={() => setShowPremiumModal(false)} />
       )}
     </div>
   );
