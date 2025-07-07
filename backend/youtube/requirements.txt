@@ -1,0 +1,16 @@
+openai>=1.0.0
+pandas
+numpy
+requests
+python-dotenv
+google-api-python-client
+faiss-cpu
+nltk
+tqdm
+pymysql
+fastapi
+uvicorn
+python-multipart
+Pillow
+langchain
+tiktoken
